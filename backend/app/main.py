@@ -3,10 +3,11 @@
 import os
 import uuid
 from datetime import datetime, timezone
+
 from fastapi import FastAPI, Request, Response
-from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
+from backend.app.api.v1.github import router as github_router
 from backend.app.config import get_settings
 from backend.app.errors import register_error_handlers
 from backend.app.logging_setup import setup_logging
@@ -49,6 +50,9 @@ def create_app() -> FastAPI:
 
     # Register standardized error handlers
     register_error_handlers(app)
+
+    # API v1 Routers
+    app.include_router(github_router, prefix="/api/v1")
 
     # API v1 Health Check
     @app.get("/api/v1/healthz")
