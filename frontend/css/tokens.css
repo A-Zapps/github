@@ -1,0 +1,42 @@
+:root {
+  /* Brand and surfaces (from brief) */
+  --bg:            #F4F5F7;
+  --surface:       #FFFFFF;
+  --sidebar:       #ECEEF1;
+  --primary:       #5267D8;
+  --text:          #20242C;
+  --border:        #E3E6EB;
+
+  /* Primary states (new) */
+  --primary-hover: #4457C2;
+  --primary-press: #3A4AAD;
+  --primary-subtle:#EEF0FB;
+
+  /* Text levels (new) */
+  --text-2:        #5B6270;   /* captions, table headers */
+  --text-3:        #8A909C;   /* placeholders, disabled only */
+  --border-strong: #D2D6DD;
+
+  /* Status (new). Each has a text color and a soft background. */
+  --success:       #1F7A55;  --success-bg: #E6F5EE;
+  --warning:       #96650A;  --warning-bg: #FBF3E1;
+  --danger:        #B73636;  --danger-bg:  #FBEAEA;
+  --info:          #2C6FA8;  --info-bg:    #E8F1F9;
+
+  /* Radius, shadow, motion (new) */
+  --r-sm: 6px;  --r-md: 8px;  --r-lg: 12px;  --r-pill: 999px;
+  --shadow-1: 0 1px 2px rgba(16,24,40,.04), 0 1px 3px rgba(16,24,40,.06);
+  --shadow-2: 0 4px 12px rgba(16,24,40,.08);
+  --t-fast: 120ms;  --t-base: 180ms;  --ease: cubic-bezier(.2,.0,.2,1);
+
+  /* Spacing, 4px base */
+  --s-1:4px; --s-2:8px; --s-3:12px; --s-4:16px; --s-5:24px; --s-6:32px; --s-7:48px;
+
+  /* Layout */
+  --sidebar-w: 248px;  --sidebar-w-collapsed: 64px;  --topbar-h: 56px;
+  --content-max: 1280px;
+
+  /* Fonts */
+  --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
+}

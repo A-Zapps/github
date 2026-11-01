@@ -1,0 +1,335 @@
+/* Shell Layout */
+
+#app-container {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+  background-color: var(--bg);
+}
+
+/* Sidebar */
+#sidebar {
+  width: var(--sidebar-w);
+  flex-shrink: 0;
+  height: 100%;
+  background-color: var(--sidebar);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  transition: width var(--t-base) var(--ease);
+  position: relative;
+  z-index: 50;
+}
+
+#sidebar.collapsed {
+  width: var(--sidebar-w-collapsed);
+}
+
+.sidebar-header {
+  height: var(--topbar-h);
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: 0 var(--s-4);
+  border-bottom: 1px solid var(--border);
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.sidebar-logo {
+  width: 28px;
+  height: 28px;
+  background-color: var(--primary);
+  color: #fff;
+  border-radius: var(--r-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.sidebar-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#sidebar.collapsed .sidebar-title {
+  display: none;
+}
+
+.sidebar-nav {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: var(--s-3) var(--s-2);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  height: 36px;
+  padding: 0 var(--s-3);
+  border-radius: var(--r-md);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 500;
+  transition: background-color var(--t-fast) var(--ease), color var(--t-fast) var(--ease);
+  position: relative;
+  white-space: nowrap;
+}
+
+.nav-item:hover {
+  background-color: rgba(32, 36, 44, 0.05);
+}
+
+.nav-item[aria-current="page"] {
+  background-color: var(--primary-subtle);
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.nav-item[aria-current="page"]::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 6px;
+  bottom: 6px;
+  width: 3px;
+  background-color: var(--primary);
+  border-radius: 0 var(--r-sm) var(--r-sm) 0;
+}
+
+.nav-icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nav-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#sidebar.collapsed .nav-label {
+  display: none;
+}
+
+#sidebar.collapsed .nav-item {
+  justify-content: center;
+  padding: 0;
+}
+
+.sidebar-footer {
+  border-top: 1px solid var(--border);
+  padding: var(--s-2);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+#sidebar.collapsed .sidebar-footer {
+  justify-content: center;
+}
+
+.collapse-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-md);
+  color: var(--text-2);
+  transition: background-color var(--t-fast) var(--ease);
+}
+
+.collapse-btn:hover {
+  background-color: rgba(32, 36, 44, 0.08);
+  color: var(--text);
+}
+
+/* Main Area */
+#main-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  height: 100%;
+}
+
+/* Topbar */
+#topbar {
+  height: var(--topbar-h);
+  background-color: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--s-5);
+  flex-shrink: 0;
+  z-index: 10;
+}
+
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+}
+
+.menu-toggle-btn {
+  display: none;
+  width: 32px;
+  height: 32px;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-md);
+  color: var(--text-2);
+}
+
+.topbar-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+}
+
+.repo-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: 4px var(--s-3);
+  background-color: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-2);
+}
+
+.rate-limit-meter {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-size: 12px;
+  color: var(--text-2);
+  padding: 4px var(--s-2);
+}
+
+.rate-limit-bar {
+  width: 48px;
+  height: 6px;
+  background-color: var(--border);
+  border-radius: var(--r-pill);
+  overflow: hidden;
+}
+
+.rate-limit-fill {
+  height: 100%;
+  background-color: var(--primary);
+  width: 100%;
+}
+
+/* Content Area */
+#content {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--s-5);
+  display: flex;
+  flex-direction: column;
+}
+
+.content-inner {
+  max-width: var(--content-max);
+  width: 100%;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-5);
+}
+
+/* Responsive Scrim for Mobile Drawer */
+#drawer-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background-color: rgba(32, 36, 44, 0.4);
+  z-index: 40;
+}
+
+/* Responsive Breakpoints */
+@media (max-width: 1199px) and (min-width: 768px) {
+  #sidebar:not(.user-expanded) {
+    width: var(--sidebar-w-collapsed);
+  }
+  #sidebar:not(.user-expanded) .sidebar-title,
+  #sidebar:not(.user-expanded) .nav-label {
+    display: none;
+  }
+  #sidebar:not(.user-expanded) .nav-item {
+    justify-content: center;
+    padding: 0;
+  }
+}
+
+@media (max-width: 767px) {
+  .menu-toggle-btn {
+    display: flex;
+  }
+
+  #sidebar {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    transform: translateX(-100%);
+    width: var(--sidebar-w) !important;
+    transition: transform var(--t-base) var(--ease);
+  }
+
+  #sidebar.drawer-open {
+    transform: translateX(0);
+  }
+
+  #sidebar .sidebar-title,
+  #sidebar .nav-label {
+    display: block !important;
+  }
+
+  #sidebar .nav-item {
+    justify-content: flex-start !important;
+    padding: 0 var(--s-3) !important;
+  }
+
+  #drawer-backdrop.active {
+    display: block;
+  }
+
+  #topbar {
+    padding: 0 var(--s-3);
+  }
+
+  #content {
+    padding: var(--s-3);
+  }
+
+  .repo-chip {
+    display: none;
+  }
+}

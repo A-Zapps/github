@@ -35,7 +35,7 @@ Continue with Phase N from docs/TASK.md. Same rules. Stop at the end of the phas
 - [x] T0.2 `config.py` (pydantic-settings), JSON logging with secret redaction, `AppError` and the error envelope handlers. Done when: a test shows a token string never appears in a log line, and an unknown route returns the error envelope.
 - [x] T0.3 SQLAlchemy models and the first Alembic migration for every table in ARCHITECTURE section 5. Done when: `alembic upgrade head` creates all tables in a new SQLite file.
 - [x] T0.4 App factory, `GET /api/v1/healthz`, static mount for `frontend/`, security headers (RULES B9). Done when: `http://localhost:8000` serves the shell and a test checks the four headers.
-- [ ] T0.5 Frontend shell: `tokens.css` exactly as in DESIGN section 1, layout, collapsible sidebar with the 13 routes, hash router, each page shows an empty state saying "Not built yet". Done when: all 13 links navigate, the sidebar collapses, and the layout works at 375 px.
+- [x] T0.5 Frontend shell: `tokens.css` exactly as in DESIGN section 1, layout, collapsible sidebar with the 13 routes, hash router, each page shows an empty state saying "Not built yet". Done when: all 13 links navigate, the sidebar collapses, and the layout works at 375 px.
 - [ ] T0.6 `scripts/check` (ruff, pytest, `scan_forbidden.py`) and first tests. Done when: it exits 0, and adding `import random` to `backend/app` makes it fail.
 
 You will see: the empty dashboard in the final design, all pages reachable.

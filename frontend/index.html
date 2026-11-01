@@ -5,8 +5,61 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>GitHub Repository Analyzer</title>
   <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/components.css">
 </head>
 <body>
-  <div id="app">Loading GitHub Repository Analyzer...</div>
+  <div id="drawer-backdrop"></div>
+
+  <div id="app-container">
+    <!-- Sidebar -->
+    <aside id="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">GA</div>
+        <span class="sidebar-title">Repo Analyzer</span>
+      </div>
+
+      <nav id="sidebar-nav" class="sidebar-nav" aria-label="Main Navigation"></nav>
+
+      <div class="sidebar-footer">
+        <button id="collapse-btn" class="collapse-btn" aria-label="Collapse sidebar" title="Collapse sidebar"></button>
+      </div>
+    </aside>
+
+    <!-- Main Container -->
+    <div id="main-container">
+      <!-- Topbar -->
+      <header id="topbar">
+        <div class="topbar-left">
+          <button id="menu-toggle-btn" class="menu-toggle-btn" aria-label="Open navigation menu">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="4" y1="6" x2="20" y2="6"></line>
+              <line x1="4" y1="12" x2="20" y2="12"></line>
+              <line x1="4" y1="18" x2="20" y2="18"></line>
+            </svg>
+          </button>
+          <h1 id="topbar-title" class="topbar-title">Overview</h1>
+        </div>
+
+        <div class="topbar-right">
+          <div id="repo-chip" class="repo-chip">No repo selected</div>
+          <div class="rate-limit-meter">
+            <div class="rate-limit-bar">
+              <div id="rate-limit-fill" class="rate-limit-fill" style="width: 100%;"></div>
+            </div>
+            <span id="rate-limit-text">5,000 left</span>
+          </div>
+        </div>
+      </header>
+
+      <!-- Content Area -->
+      <main id="content">
+        <div id="content-inner" class="content-inner"></div>
+      </main>
+    </div>
+  </div>
+
+  <script type="module" src="js/main.js"></script>
 </body>
 </html>
