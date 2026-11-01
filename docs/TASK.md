@@ -31,7 +31,7 @@ Continue with Phase N from docs/TASK.md. Same rules. Stop at the end of the phas
 
 ## Phase 0: Foundation (about 1 h)
 
-- [ ] T0.1 Create the folder layout from ARCHITECTURE section 3, `.gitignore`, `.env.example`, and the three requirements files. Done when: `pip install -r requirements.txt` works in a fresh venv.
+- [x] T0.1 Create the folder layout from ARCHITECTURE section 3, `.gitignore`, `.env.example`, and the three requirements files. Done when: `pip install -r requirements.txt` works in a fresh venv.
 - [ ] T0.2 `config.py` (pydantic-settings), JSON logging with secret redaction, `AppError` and the error envelope handlers. Done when: a test shows a token string never appears in a log line, and an unknown route returns the error envelope.
 - [ ] T0.3 SQLAlchemy models and the first Alembic migration for every table in ARCHITECTURE section 5. Done when: `alembic upgrade head` creates all tables in a new SQLite file.
 - [ ] T0.4 App factory, `GET /api/v1/healthz`, static mount for `frontend/`, security headers (RULES B9). Done when: `http://localhost:8000` serves the shell and a test checks the four headers.
