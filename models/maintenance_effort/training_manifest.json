@@ -1,0 +1,30 @@
+{
+  "seed": 42,
+  "created_at": "2026-11-01T05:39:16.218783+00:00",
+  "train_rows": 160,
+  "test_rows": 40,
+  "features": [
+    "loc",
+    "nloc",
+    "n_functions",
+    "ccn_max",
+    "ccn_mean",
+    "ccn_p90",
+    "token_count",
+    "params_max",
+    "commits_12m",
+    "authors_12m",
+    "lines_added_12m",
+    "lines_deleted_12m",
+    "churn_ratio",
+    "days_since_last_change",
+    "bugfix_commits_12m",
+    "age_days_capped",
+    "is_test"
+  ],
+  "libraries": {
+    "scikit-learn": "1.4+",
+    "numpy": "1.26+",
+    "pandas": "2.0+"
+  }
+}

@@ -14,7 +14,8 @@ def test_train_health_artifacts(tmp_path: Path):
     out_dir = tmp_path / "repo_health"
     metrics = train_health_models(output_dir=out_dir)
 
-    # 1. Verify all 5 artifact files exist
+    assert "XGBoost" in metrics["models"]
+    assert "MajorityClassBaseline" in metrics["models"]
     assert (out_dir / "model.joblib").is_file()
     assert (out_dir / "metrics.json").is_file()
     assert (out_dir / "model_card.md").is_file()

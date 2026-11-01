@@ -1,0 +1,31 @@
+{
+  "task": "repo_clusters",
+  "optimal_k": 4,
+  "silhouette_score": 0.5111,
+  "davies_bouldin_score": 0.6998,
+  "pca_explained_variance_ratio": [
+    0.5985,
+    0.2396
+  ],
+  "pca_total_variance_explained": 0.8381,
+  "silhouette_by_k": {
+    "3": 0.5081,
+    "4": 0.5111,
+    "5": 0.4723,
+    "6": 0.4334,
+    "7": 0.4207,
+    "8": 0.4226,
+    "9": 0.3738
+  },
+  "n_samples": 120,
+  "features": [
+    "total_files",
+    "total_loc",
+    "avg_maintainability",
+    "duplication_pct",
+    "test_ratio",
+    "commits_per_month_mean",
+    "distinct_authors",
+    "bus_factor"
+  ]
+}

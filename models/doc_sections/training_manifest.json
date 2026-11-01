@@ -1,0 +1,16 @@
+{
+  "seed": 42,
+  "created_at": "2026-11-01T05:41:23.883304+00:00",
+  "train_rows": 32,
+  "test_rows": 8,
+  "classes": [
+    "installation",
+    "usage",
+    "contributing",
+    "license",
+    "other"
+  ],
+  "libraries": {
+    "scikit-learn": "1.4+"
+  }
+}

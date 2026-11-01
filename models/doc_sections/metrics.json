@@ -1,0 +1,24 @@
+{
+  "task": "doc_sections",
+  "best_model": "MultinomialNB",
+  "classes": [
+    "installation",
+    "usage",
+    "contributing",
+    "license",
+    "other"
+  ],
+  "models": {
+    "MajorityClassBaseline": {
+      "accuracy": 0.125,
+      "macro_f1": 0.0444,
+      "note": "Predicts most frequent training class"
+    },
+    "MultinomialNB": {
+      "accuracy": 0.5,
+      "macro_f1": 0.38
+    }
+  },
+  "held_out_test_rows": 8,
+  "training_rows": 32
+}

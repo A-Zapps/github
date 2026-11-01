@@ -1,0 +1,21 @@
+{
+  "task": "maintenance_effort",
+  "best_model": "RandomForestRegressor",
+  "target": "log1p(lines added + deleted in next 6 months)",
+  "models": {
+    "MeanPredictorBaseline": {
+      "mae": 0.355,
+      "rmse": 0.4583,
+      "r2": -0.0006,
+      "note": "Predicts mean training effort"
+    },
+    "RandomForestRegressor": {
+      "mae": 0.2174,
+      "rmse": 0.2626,
+      "r2": 0.6715
+    }
+  },
+  "held_out_test_rows": 40,
+  "held_out_test_repos": 2,
+  "training_rows": 160
+}

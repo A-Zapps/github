@@ -4,7 +4,7 @@ import json
 import logging
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, Optional
 
 import joblib
 import numpy as np
@@ -12,8 +12,14 @@ import pandas as pd
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import average_precision_score, f1_score, precision_score, recall_score, roc_auc_score
-from sklearn.model_selection import StratifiedKFold, train_test_split
+from sklearn.metrics import (
+    average_precision_score,
+    f1_score,
+    precision_score,
+    recall_score,
+    roc_auc_score,
+)
+from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.svm import LinearSVC
@@ -117,7 +123,6 @@ def train_bug_models(
 
     # 2. Baseline 1: Prior Rate Baseline
     y_prob_prior = np.full(len(y_test), fill_value=prior_positive_rate)
-    y_pred_prior = (y_prob_prior >= 0.5).astype(int)
     prior_prauc = round(float(average_precision_score(y_test, y_prob_prior)), 4)
     prior_roc = round(float(roc_auc_score(y_test, y_prob_prior)), 4)
 

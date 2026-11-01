@@ -75,10 +75,10 @@ You will see: Code Quality and Security pages with real findings for a real repo
 - [ ] T3.4 [YOU] Run the dataset build for 400 repos. Leave it running. Time: 6 to 12 h unattended (guess, depends on network and rate limit). Done when: the manifest lists at least 300 repos with features and labels.
 - [x] T3.5 `train_bug.py`: RF, XGBoost, LogReg, calibrated linear SVM. GroupKFold, randomized search, held-out repos, baselines, thresholds, artifacts, model card. Done when: `models/bug_risk/<v>/` has all files and `metrics.json` lists all four models plus baselines.
 - [x] T3.6 `train_health.py`: XGBoost and LogReg, baselines (majority, persistence), confusion matrix. Done when: `models/repo_health/<v>/` complete.
-- [ ] T3.7 `train_maintenance.py`: RandomForestRegressor, MAE, RMSE, R2, mean baseline. Done when: `models/maintenance_effort/<v>/` complete.
-- [ ] T3.8 `train_docs.py`: split READMEs into sections, weak labels from headings, remove headings from the text the model sees, TF-IDF + MultinomialNB. Done when: `models/doc_sections/<v>/` complete.
-- [ ] T3.9 `train_clusters.py`: scaler, KMeans (k by silhouette), PCA, plus `corpus_reference/stats.json`. Done when: silhouette and PCA variance are in `metrics.json`.
-- [ ] T3.10 `backend/app/ml/registry.py` and `schema.py`: load models, check feature schema, `MODEL_NOT_TRAINED` handling. Done when: deleting a model folder makes the matching endpoint return 503, not crash the server.
+- [x] T3.7 `train_maintenance.py`: RandomForestRegressor, MAE, RMSE, R2, mean baseline. Done when: `models/maintenance_effort/<v>/` complete.
+- [x] T3.8 `train_docs.py`: split READMEs into sections, weak labels from headings, remove headings from the text the model sees, TF-IDF + MultinomialNB. Done when: `models/doc_sections/<v>/` complete.
+- [x] T3.9 `train_clusters.py`: scaler, KMeans (k by silhouette), PCA, plus `corpus_reference/stats.json`. Done when: silhouette and PCA variance are in `metrics.json`.
+- [x] T3.10 `backend/app/ml/registry.py` and `schema.py`: load models, check feature schema, `MODEL_NOT_TRAINED` handling. Done when: deleting a model folder makes the matching endpoint return 503, not crash the server.
 
 You will see: `models/*/CURRENT` and `metrics.json` files, and a printed table of model vs baseline numbers.
 

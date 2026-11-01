@@ -1,0 +1,44 @@
+{
+  "features": [
+    {
+      "name": "total_files",
+      "type": "float",
+      "description": "Total files"
+    },
+    {
+      "name": "total_loc",
+      "type": "float",
+      "description": "Total loc"
+    },
+    {
+      "name": "avg_maintainability",
+      "type": "float",
+      "description": "Avg maintainability"
+    },
+    {
+      "name": "duplication_pct",
+      "type": "float",
+      "description": "Duplication pct"
+    },
+    {
+      "name": "test_ratio",
+      "type": "float",
+      "description": "Test ratio"
+    },
+    {
+      "name": "commits_per_month_mean",
+      "type": "float",
+      "description": "Commits per month mean"
+    },
+    {
+      "name": "distinct_authors",
+      "type": "float",
+      "description": "Distinct authors"
+    },
+    {
+      "name": "bus_factor",
+      "type": "float",
+      "description": "Bus factor"
+    }
+  ]
+}

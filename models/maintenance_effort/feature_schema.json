@@ -1,0 +1,89 @@
+{
+  "features": [
+    {
+      "name": "loc",
+      "type": "float",
+      "description": "Loc"
+    },
+    {
+      "name": "nloc",
+      "type": "float",
+      "description": "Nloc"
+    },
+    {
+      "name": "n_functions",
+      "type": "float",
+      "description": "N functions"
+    },
+    {
+      "name": "ccn_max",
+      "type": "float",
+      "description": "Ccn max"
+    },
+    {
+      "name": "ccn_mean",
+      "type": "float",
+      "description": "Ccn mean"
+    },
+    {
+      "name": "ccn_p90",
+      "type": "float",
+      "description": "Ccn p90"
+    },
+    {
+      "name": "token_count",
+      "type": "float",
+      "description": "Token count"
+    },
+    {
+      "name": "params_max",
+      "type": "float",
+      "description": "Params max"
+    },
+    {
+      "name": "commits_12m",
+      "type": "float",
+      "description": "Commits 12m"
+    },
+    {
+      "name": "authors_12m",
+      "type": "float",
+      "description": "Authors 12m"
+    },
+    {
+      "name": "lines_added_12m",
+      "type": "float",
+      "description": "Lines added 12m"
+    },
+    {
+      "name": "lines_deleted_12m",
+      "type": "float",
+      "description": "Lines deleted 12m"
+    },
+    {
+      "name": "churn_ratio",
+      "type": "float",
+      "description": "Churn ratio"
+    },
+    {
+      "name": "days_since_last_change",
+      "type": "float",
+      "description": "Days since last change"
+    },
+    {
+      "name": "bugfix_commits_12m",
+      "type": "float",
+      "description": "Bugfix commits 12m"
+    },
+    {
+      "name": "age_days_capped",
+      "type": "float",
+      "description": "Age days capped"
+    },
+    {
+      "name": "is_test",
+      "type": "float",
+      "description": "Is test"
+    }
+  ]
+}

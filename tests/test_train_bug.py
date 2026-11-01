@@ -14,7 +14,8 @@ def test_train_bug_artifacts(tmp_path: Path):
     out_dir = tmp_path / "bug_risk"
     metrics = train_bug_models(output_dir=out_dir)
 
-    # 1. Verify files exist
+    assert "RandomForest" in metrics["models"]
+    assert "PriorRateBaseline" in metrics["baselines"]
     assert (out_dir / "model.joblib").is_file()
     assert (out_dir / "metrics.json").is_file()
     assert (out_dir / "thresholds.json").is_file()
