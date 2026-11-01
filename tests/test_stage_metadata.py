@@ -2,6 +2,7 @@
 
 import asyncio
 import base64
+from unittest.mock import patch
 
 import httpx
 import pytest
@@ -75,19 +76,21 @@ async def test_stage_metadata_returns_repository_data():
     )
 
     app = create_app()
-    transport = httpx.ASGITransport(app=app)
-    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
-        # Enqueue analysis
-        post_resp = await client.post("/api/v1/analyses", json={"repo": "pallets/flask"})
-        assert post_resp.status_code == 202
-        analysis_id = post_resp.json()["data"]["analysis_id"]
+    with patch("backend.app.services.analysis_pipeline.clone_bare_repo", return_value=None), \
+         patch("backend.app.services.analysis_pipeline.materialize_tree", return_value={"paths": [], "truncated": False}):
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+            # Enqueue analysis
+            post_resp = await client.post("/api/v1/analyses", json={"repo": "pallets/flask"})
+            assert post_resp.status_code == 202
+            analysis_id = post_resp.json()["data"]["analysis_id"]
 
-        # Allow background pipeline to execute Stages 1 & 2
-        await asyncio.sleep(0.6)
+            # Allow background pipeline to execute Stages 1 & 2
+            await asyncio.sleep(0.6)
 
-        # Fetch repository result
-        resp = await client.get(f"/api/v1/analyses/{analysis_id}/repository")
-        assert resp.status_code == 200
+            # Fetch repository result
+            resp = await client.get(f"/api/v1/analyses/{analysis_id}/repository")
+            assert resp.status_code == 200
 
         data = resp.json()["data"]
         assert data["full_name"] == "pallets/flask"
