@@ -215,6 +215,7 @@ function renderHealthPage() {
 
     } catch (err) {
       container.textContent = "";
+      const isNotReady = err.code === "ANALYSIS_NOT_READY" || err.status === 409;
       if (err.code === "MODEL_NOT_TRAINED" || err.status === 503) {
         container.appendChild(
           h("div", { className: "empty-state" },
@@ -223,6 +224,29 @@ function renderHealthPage() {
             h("p", { className: "text-muted", style: { marginBottom: "var(--space-4)" } }, "The repository health model artifact is not available. Run the offline training command:"),
             h("code", { style: { display: "block", padding: "var(--space-3)", backgroundColor: "var(--color-bg-subtle)", borderRadius: "var(--radius-md)", fontFamily: "var(--font-mono)", marginBottom: "var(--space-4)" } }, "python backend/app/ml/train_health.py"),
             h("a", { href: "#/models", className: "btn btn-secondary" }, "View Model Performance")
+          )
+        );
+      } else if (isNotReady) {
+        container.appendChild(
+          h("div", { className: "empty-state" },
+            h("div", { className: "empty-icon", style: { color: "var(--color-warning)", marginBottom: "var(--space-3)" } }, icons.alertCircle()),
+            h("h3", { style: { fontSize: "var(--text-lg)", fontWeight: "var(--font-semibold)", marginBottom: "var(--space-2)" } }, "Analysis Not Completed"),
+            h("p", { className: "text-muted", style: { marginBottom: "var(--space-4)" } },
+              `Analysis #${analysisId} is still processing or did not complete. Lifecycle health diagnostics require completed analysis.`
+            ),
+            h("div", { style: { display: "flex", gap: "var(--space-3)", justifyContent: "center" } },
+              h("a", { href: "#/analyzer", className: "btn btn-primary" }, "Check Analyzer Status"),
+              h("button", {
+                className: "btn btn-secondary",
+                onClick: async () => {
+                  const rec = await api.getRecentAnalyses(5);
+                  const compl = (rec.data || []).find((a) => a.status === "completed");
+                  if (compl) {
+                    state.setAnalysis(compl.id, compl.repo, compl.head_sha);
+                  }
+                }
+              }, "Switch to Recent Completed")
+            )
           )
         );
       } else {

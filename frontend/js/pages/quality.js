@@ -288,12 +288,38 @@ function renderQualityPage() {
 
     } catch (err) {
       container.textContent = "";
-      container.appendChild(
-        h("div", { className: "error-banner", style: { padding: "var(--space-4)" } },
-          h("div", { style: { fontWeight: "var(--font-bold)", marginBottom: "var(--space-1)" } }, `Error loading quality metrics (${err.code || "FAILED"})`),
-          h("div", { style: { fontSize: "var(--text-sm)" } }, err.message || "Failed to load quality metrics.")
-        )
-      );
+      const isNotReady = err.code === "ANALYSIS_NOT_READY" || err.status === 409;
+      if (isNotReady) {
+        container.appendChild(
+          h("div", { className: "empty-state" },
+            h("div", { className: "empty-icon", style: { color: "var(--color-warning)", marginBottom: "var(--space-3)" } }, icons.alertCircle()),
+            h("h3", { style: { fontSize: "var(--text-lg)", fontWeight: "var(--font-semibold)", marginBottom: "var(--space-2)" } }, "Analysis Not Completed"),
+            h("p", { className: "text-muted", style: { marginBottom: "var(--space-4)" } },
+              `Analysis #${analysisId} is still processing or did not complete. Code quality metrics require a completed analysis.`
+            ),
+            h("div", { style: { display: "flex", gap: "var(--space-3)", justifyContent: "center" } },
+              h("a", { href: "#/analyzer", className: "btn btn-primary" }, "Check Analyzer Status"),
+              h("button", {
+                className: "btn btn-secondary",
+                onClick: async () => {
+                  const rec = await api.getRecentAnalyses(5);
+                  const compl = (rec.data || []).find((a) => a.status === "completed");
+                  if (compl) {
+                    state.setAnalysis(compl.id, compl.repo, compl.head_sha);
+                  }
+                }
+              }, "Switch to Recent Completed")
+            )
+          )
+        );
+      } else {
+        container.appendChild(
+          h("div", { className: "error-banner", style: { padding: "var(--space-4)" } },
+            h("div", { style: { fontWeight: "var(--font-bold)", marginBottom: "var(--space-1)" } }, `Error loading quality metrics (${err.code || "FAILED"})`),
+            h("div", { style: { fontSize: "var(--text-sm)" } }, err.message || "Failed to load quality metrics.")
+          )
+        );
+      }
     }
   }
 

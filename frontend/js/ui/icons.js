@@ -116,5 +116,19 @@ export const icons = {
     { tag: "circle", attrs: { cx: "12", cy: "12", r: "10" } },
     { tag: "line", attrs: { x1: "12", y1: "16", x2: "12", y2: "12" } },
     { tag: "line", attrs: { x1: "12", y1: "8", x2: "12.01", y2: "8" } }
-  ], s)
+  ], s),
+  alertCircle: (s) => createSvg([
+    { tag: "circle", attrs: { cx: "12", cy: "12", r: "10" } },
+    { tag: "line", attrs: { x1: "12", y1: "8", x2: "12", y2: "12" } },
+    { tag: "line", attrs: { x1: "12", y1: "16", x2: "12.01", y2: "16" } }
+  ], s),
+  checkCircle: (s) => createSvg([
+    { tag: "circle", attrs: { cx: "12", cy: "12", r: "10" } },
+    { tag: "polyline", attrs: { points: "9 12 11 14 15 10" } }
+  ], s),
+  bug: (s) => icons.bugs(s),
+  shield: (s) => icons.security(s),
+  users: (s) => icons.developers(s),
+  book: (s) => icons.docs(s),
+  heart: (s) => icons.health(s)
 };

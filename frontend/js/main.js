@@ -144,6 +144,26 @@ function initShell() {
     }
   }).catch((e) => console.error("Initial rate limit fetch error:", e));
 
+  // Hydrate active repository state from API
+  if (state.activeAnalysisId) {
+    api.getAnalysisSummary(state.activeAnalysisId).then((res) => {
+      if (res && res.data) {
+        state.currentRepo = res.data.repo;
+        state.currentHeadSha = res.data.head_sha;
+        state.notify();
+      }
+    }).catch(() => {});
+  } else {
+    // If no analysis is selected, default to the most recent completed analysis
+    api.getRecentAnalyses(5).then((res) => {
+      const recent = res && res.data ? res.data : [];
+      const completed = recent.find((a) => a.status === "completed");
+      if (completed) {
+        state.setAnalysis(completed.id, completed.repo, completed.head_sha);
+      }
+    }).catch(() => {});
+  }
+
   // Initialize Router
   const router = new Router(contentArea, topbarTitle);
   router.init();

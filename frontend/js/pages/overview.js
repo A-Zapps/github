@@ -141,6 +141,48 @@ export default {
       const sData = sRes.status === "fulfilled" ? sRes.value.data : null;
       const hData = hRes.status === "fulfilled" ? hRes.value.data : null;
 
+      // Status banner if active analysis is failed
+      const existingFail = this.container.querySelector(".analysis-failed-banner");
+      if (existingFail) existingFail.remove();
+
+      if (!qData && !bData && !sData && !hData) {
+        try {
+          const sumRes = await api.getAnalysisSummary(analysisId);
+          if (sumRes && sumRes.data && sumRes.data.status === "failed") {
+            const failBanner = h("div", {
+              className: "badge badge-danger analysis-failed-banner",
+              style: {
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                padding: "var(--space-3) var(--space-4)",
+                marginBottom: "var(--space-4)",
+                borderRadius: "var(--radius-md)",
+                fontSize: "var(--text-sm)",
+                width: "100%",
+              }
+            },
+              h("span", {}, `Notice: Analysis #${analysisId} (${sumRes.data.repo}) failed. Evaluation metrics are unavailable.`),
+              h("div", { style: { display: "flex", gap: "var(--space-2)" } },
+                h("a", { href: "#/analyzer", className: "btn btn-secondary", style: { fontSize: "var(--text-xs)" } }, "View in Analyzer"),
+                h("button", {
+                  className: "btn btn-secondary",
+                  style: { fontSize: "var(--text-xs)" },
+                  onClick: async () => {
+                    const rec = await api.getRecentAnalyses(5);
+                    const compl = (rec.data || []).find((a) => a.status === "completed");
+                    if (compl) {
+                      state.setAnalysis(compl.id, compl.repo, compl.head_sha);
+                    }
+                  }
+                }, "Switch to Completed")
+              )
+            );
+            this.container.insertBefore(failBanner, this.activeGrid);
+          }
+        } catch (e) {}
+      }
+
       // Truncation banner for large repositories (T9.1)
       const existingTrunc = this.container.querySelector(".truncation-banner");
       if (existingTrunc) existingTrunc.remove();
@@ -330,7 +372,13 @@ export default {
             const viewBtn = h("button", { className: "btn btn-secondary", style: { fontSize: "var(--text-xs)" } }, "Inspect");
             viewBtn.addEventListener("click", () => {
               if (state.setAnalysis) state.setAnalysis(a.id, a.repo, a.head_sha);
-              window.location.hash = "#/analyzer";
+              if (a.status === "completed") {
+                this.loadActiveMetrics();
+                this.loadRecommendations();
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              } else {
+                window.location.hash = "#/analyzer";
+              }
             });
 
             return h("tr", null,

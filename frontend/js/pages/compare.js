@@ -32,8 +32,8 @@ function renderComparePage() {
       const all = res.data || [];
       availableAnalyses = all.filter((a) => a.status === "completed");
 
-      // Auto-select up to 2 analyses initially
-      if (state.activeAnalysisId) {
+      // Auto-select up to 2 analyses initially (only completed ones)
+      if (state.activeAnalysisId && availableAnalyses.some((a) => a.id === state.activeAnalysisId)) {
         selectedIds.add(state.activeAnalysisId);
       }
       for (const a of availableAnalyses) {
