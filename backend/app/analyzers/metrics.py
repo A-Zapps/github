@@ -38,17 +38,26 @@ def analyze_file_metrics(file_path: Path, rel_path: str, content: Optional[str] 
     lines = content.splitlines()
     loc = len(lines)
 
-    # 1. Lizard analysis
-    # lizard.analyze_file.analyze_source_code takes filename and code
-    file_info = lizard.analyze_file.analyze_source_code(str(rel_path), content)
-    nloc = getattr(file_info, "nloc", 0)
-    token_count = getattr(file_info, "token_count", 0)
+    # 1. Lizard analysis (robustly guarded against parser crashes on complex TS/JSX grammar)
+    try:
+        file_info = lizard.analyze_file.analyze_source_code(str(rel_path), content)
+    except Exception:
+        file_info = None
+
+    if file_info is not None:
+        nloc = getattr(file_info, "nloc", 0)
+        token_count = getattr(file_info, "token_count", 0)
+        func_list = getattr(file_info, "function_list", [])
+    else:
+        nloc = len([l for l in lines if l.strip() and not l.strip().startswith(("#", "//", "/*", "*"))])
+        token_count = max(0, loc * 5)
+        func_list = []
 
     functions: List[Dict[str, Any]] = []
     ccns: List[int] = []
     params: List[int] = []
 
-    for func in getattr(file_info, "function_list", []):
+    for func in func_list:
         ccn = getattr(func, "cyclomatic_complexity", 1)
         param_count = len(getattr(func, "parameters", []))
         ccns.append(ccn)
