@@ -64,7 +64,13 @@ def run_tool(
         raise AppError("INTERNAL", f"Execution of disallowed tool '{binary}' rejected.", status_code=500)
 
     # Locate executable
-    executable = resolve_tool_path(binary)
+    if binary in ("pylint", "bandit") and not shutil.which(binary):
+        import sys
+        cmd_to_run = [sys.executable, "-m", binary] + argv[1:]
+        executable = sys.executable
+    else:
+        executable = resolve_tool_path(binary)
+        cmd_to_run = [executable] + argv[1:]
 
     # Sanitize environment: clean PATH including tool directory and isolated HOME/TEMP (ARCHITECTURE 7)
     base_path = os.environ.get("PATH", "")
@@ -86,7 +92,7 @@ def run_tool(
 
     try:
         process = subprocess.run(
-            [executable] + argv[1:],
+            cmd_to_run,
             cwd=cwd,
             env=clean_env,
             capture_output=True,

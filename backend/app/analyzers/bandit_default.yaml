@@ -1,0 +1,15 @@
+# Safe default configuration for Bandit security analysis
+profiles:
+  default:
+    include:
+      - any_other_function_with_shell_equals_true
+      - assert_used
+      - hardcoded_bind_all_interfaces
+      - hardcoded_password_string
+      - hardcoded_sql_expressions
+      - jinja2_autoescape_false
+      - paramiko_calls
+      - request_with_no_cert_validation
+      - subprocess_popen_with_shell_equals_true
+      - subprocess_without_shell_equals_true
+      - try_except_pass

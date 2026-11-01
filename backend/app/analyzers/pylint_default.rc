@@ -1,0 +1,18 @@
+[MAIN]
+# Safe minimal default configuration for untrusted repository analysis
+disable=C0114,C0115,C0116
+output-format=json
+reports=no
+score=no
+
+[BASIC]
+good-names=i,j,k,ex,Run,_,id,db,fn,f,e,v
+
+[DESIGN]
+max-args=8
+max-locals=20
+max-returns=8
+max-branches=15
+max-statements=60
+max-parents=10
+max-attributes=15
