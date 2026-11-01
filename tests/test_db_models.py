@@ -1,11 +1,7 @@
 """Tests verifying database schema creation and table integrity."""
 
-import os
-import sqlite3
-import pytest
 from sqlalchemy import inspect
 
-from backend.app.db.models import Base
 from backend.app.db.session import engine
 
 

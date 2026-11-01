@@ -1,7 +1,8 @@
 """Tests for app factory, health check, static mounting, and security headers."""
 
-import pytest
 import httpx
+import pytest
+
 from backend.app.main import create_app
 
 

@@ -3,12 +3,12 @@
 import io
 import json
 import logging
-import pytest
+
 from fastapi import FastAPI, Request
 from fastapi.testclient import TestClient
 
 from backend.app.errors import AppError, register_error_handlers
-from backend.app.logging_setup import JSONLogFormatter, SecretRedactionFilter, setup_logging
+from backend.app.logging_setup import JSONLogFormatter, SecretRedactionFilter
 
 
 def test_token_redaction_in_log_lines():

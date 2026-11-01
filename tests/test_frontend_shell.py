@@ -1,7 +1,6 @@
 """Unit tests validating frontend shell layout, routes, tokens, and navigation."""
 
 import os
-import re
 
 FRONTEND_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../frontend"))
 
