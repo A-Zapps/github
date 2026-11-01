@@ -14,7 +14,11 @@ from backend.app.services.quality_service import calculate_quality_scores
 def test_quality_scoring_calculation():
     """Verify component scores, weighted overall score, and tech debt label."""
     inventory = {
-        "files": ["main.py", "test_main.py", "utils.py"],
+        "files": [
+            {"path": "main.py", "language": "Python", "lines": 150, "is_test": False},
+            {"path": "test_main.py", "language": "Python", "lines": 50, "is_test": True},
+            {"path": "utils.py", "language": "Python", "lines": 100, "is_test": False},
+        ],
         "source_files_count": 2,
         "test_files_count": 1,
     }

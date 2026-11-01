@@ -60,7 +60,12 @@ def calculate_quality_scores(
     duplication_score = round(max(0.0, min(100.0, 100.0 - dup_pct * 3.0)), 1)
 
     # 4. Lint density: issues per 1,000 LOC
-    has_python = any(f.endswith(".py") for f in inventory.get("files", []))
+    # inventory["files"] is a list of dicts with "path", "language", etc.
+    files_list = inventory.get("files", [])
+    has_python = any(
+        (f["path"] if isinstance(f, dict) else f).endswith(".py")
+        for f in files_list
+    )
     total_loc = max(1, metrics.get("total_loc", 1))
     pylint_data = lint.get("pylint", {})
     lint_total = pylint_data.get("total", 0)
