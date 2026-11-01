@@ -115,10 +115,10 @@ You will see: a ranked action list and a side-by-side comparison.
 
 ## Phase 7: AI assistant (about 3 h)
 
-- [ ] T7.1 `chunker.py`, `embedder.py`, `store.py`: function-aware chunks, local embeddings, numpy search. Done when: asking for a known function returns its chunk first.
-- [ ] T7.2 `llm.py` provider interface, one provider implemented (the one Sai names in Q1), `prompts.py` with fenced untrusted blocks. Done when: with no key set, the endpoint returns retrieved chunks and `LLM_NOT_CONFIGURED` in the note.
-- [ ] T7.3 `/assistant/query` with the five modes and citation validation. Done when: a test with a fake provider that cites a non-existent file gets that citation removed and the answer flagged.
-- [ ] T7.4 AI Assistant page: modes, file picker, thread, citation chips, code panel, warning banner. Done when: output renders as text only (test with `<img onerror>` in a fixture file).
+- [x] T7.1 `chunker.py`, `embedder.py`, `store.py`: function-aware chunks, local embeddings, numpy search. Done when: asking for a known function returns its chunk first.
+- [x] T7.2 `llm.py` provider interface, one provider implemented (the one Sai names in Q1), `prompts.py` with fenced untrusted blocks. Done when: with no key set, the endpoint returns retrieved chunks and `LLM_NOT_CONFIGURED` in the note.
+- [x] T7.3 `/assistant/query` with the five modes and citation validation. Done when: a test with a fake provider that cites a non-existent file gets that citation removed and the answer flagged.
+- [x] T7.4 AI Assistant page: modes, file picker, thread, citation chips, code panel, warning banner. Done when: output renders as text only (test with `<img onerror>` in a fixture file).
 
 You will see: ask about a file and get an answer with working citations.
 

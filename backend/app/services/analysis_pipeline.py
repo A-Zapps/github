@@ -673,6 +673,26 @@ async def execute_analysis_pipeline(analysis_id: int, job_id: str, repo_name: st
         stage_recs.finished_at = datetime.now(timezone.utc)
         db.commit()
 
+        # Build Assistant Vector Index if enabled (ARCHITECTURE 11)
+        if settings.ENABLE_ASSISTANT_INDEX:
+            try:
+                from backend.app.rag.chunker import chunk_repository
+                from backend.app.rag.embedder import get_embedder
+                from backend.app.rag.store import save_chunks_to_db
+
+                repo_chunks = chunk_repository(
+                    src_dir=Path(src_dir),
+                    source_files=source_files,
+                    lizard_files=metrics_data.get("files", []),
+                )
+                if repo_chunks:
+                    emb = get_embedder()
+                    chunk_texts = [c["text"] for c in repo_chunks]
+                    embeddings = emb.embed_texts(chunk_texts)
+                    save_chunks_to_db(db, analysis_id, repo_chunks, embeddings)
+            except Exception as e:
+                logger.warning("Assistant indexing failed for analysis %d: %s", analysis_id, e)
+
         # Update analysis and job status
         if analysis:
             analysis.status = "completed"

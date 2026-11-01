@@ -9,6 +9,7 @@ from fastapi import FastAPI, Request, Response
 from fastapi.staticfiles import StaticFiles
 
 from backend.app.api.v1.analyses import router as analyses_router
+from backend.app.api.v1.assistant import router as assistant_router
 from backend.app.api.v1.compare import router as compare_router
 from backend.app.api.v1.github import router as github_router
 from backend.app.api.v1.jobs import router as jobs_router
@@ -73,6 +74,7 @@ def create_app() -> FastAPI:
     # Register API v1 Routers
     app.include_router(github_router, prefix="/api/v1")
     app.include_router(analyses_router, prefix="/api/v1")
+    app.include_router(assistant_router, prefix="/api/v1")
     app.include_router(compare_router, prefix="/api/v1")
     app.include_router(jobs_router, prefix="/api/v1")
     app.include_router(models_router, prefix="/api/v1")

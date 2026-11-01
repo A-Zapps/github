@@ -64,6 +64,7 @@ export const api = {
   getDocsData: (analysisId) => request(`/analyses/${analysisId}/docs`),
   getDeveloperData: (analysisId) => request(`/analyses/${analysisId}/developers`),
   getRecommendations: (analysisId) => request(`/analyses/${analysisId}/recommendations`),
+  postAssistantQuery: (analysisId, payload) => request(`/analyses/${analysisId}/assistant/query`, { method: "POST", body: payload }),
   postCompare: (analysisIds) => request("/compare", { method: "POST", body: { analysis_ids: analysisIds } }),
   getModels: () => request("/models"),
   getModelDetail: (name) => request(`/models/${name}`),
