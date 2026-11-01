@@ -115,6 +115,10 @@ LOG_LEVEL=INFO
 
 ## 5. Running the Application
 
+### Option A: One-Click Startup (Windows)
+Double-click `start_server.bat` (or `run.bat`) in the root directory. It will automatically check your virtual environment, free port 8000 if occupied, start the Uvicorn server, and open `http://localhost:8000` in your default browser.
+
+### Option B: Terminal Command (Cross-Platform)
 Start the FastAPI application and static frontend server:
 ```bash
 uvicorn backend.app.main:app --reload --port 8000
