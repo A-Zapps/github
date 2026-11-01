@@ -55,7 +55,7 @@ You will see: type `pallets/flask`, watch the stages tick, get real stats and ch
 ## Phase 2: Code quality and security (about 4 h)
 
 - [x] T2.1 `inventory.py`: language detection by extension, test-file detection, ignore rules. Done when: a fixture repo gives the expected counts.
-- [ ] T2.2 `metrics.py`: Lizard for all files, Radon (CC, MI, Halstead) for Python. Done when: results for a fixture file match values worked out by hand.
+- [x] T2.2 `metrics.py`: Lizard for all files, Radon (CC, MI, Halstead) for Python. Done when: results for a fixture file match values worked out by hand.
 - [ ] T2.3 `duplication.py`: 6-line normalized window hashing. Done when: a fixture with a known copied block reports it and the percent is right.
 - [ ] T2.4 `lint_python.py`: Pylint and Bandit through `run_tool`, our configs, sampled files, timeouts. Done when: a fixture repo containing a hostile `pylintrc` with an `init-hook` does not execute it (test writes a marker file and asserts it does not exist).
 - [ ] T2.5 `scoring.yaml` and the quality score, component scores, tech debt estimate. Done when: `GET /analyses/{id}/quality` returns the score, components, weights, and the label "estimate from fixed rules".
