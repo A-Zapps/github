@@ -2,17 +2,33 @@
 
 import os
 import uuid
+from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 
 from fastapi import FastAPI, Request, Response
 from fastapi.staticfiles import StaticFiles
 
+from backend.app.api.v1.analyses import router as analyses_router
 from backend.app.api.v1.github import router as github_router
+from backend.app.api.v1.jobs import router as jobs_router
 from backend.app.config import get_settings
+from backend.app.core.jobs import cleanup_stale_jobs_on_startup
+from backend.app.db.session import SessionLocal
 from backend.app.errors import register_error_handlers
 from backend.app.logging_setup import setup_logging
 
 ANALYZER_VERSION = "1.0.0"
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Lifespan event handler performing startup cleanup and graceful shutdown."""
+    db = SessionLocal()
+    try:
+        cleanup_stale_jobs_on_startup(db)
+    finally:
+        db.close()
+    yield
 
 
 def create_app() -> FastAPI:
@@ -25,12 +41,12 @@ def create_app() -> FastAPI:
         version=ANALYZER_VERSION,
         docs_url=None,
         redoc_url=None,
+        lifespan=lifespan,
     )
 
     # Middleware: Request ID and Security Headers
     @app.middleware("http")
     async def app_middleware(request: Request, call_next) -> Response:
-        # Assign or preserve unique request ID
         req_id = request.headers.get("X-Request-ID") or str(uuid.uuid4())
         request.state.request_id = req_id
 
@@ -51,8 +67,10 @@ def create_app() -> FastAPI:
     # Register standardized error handlers
     register_error_handlers(app)
 
-    # API v1 Routers
+    # Register API v1 Routers
     app.include_router(github_router, prefix="/api/v1")
+    app.include_router(analyses_router, prefix="/api/v1")
+    app.include_router(jobs_router, prefix="/api/v1")
 
     # API v1 Health Check
     @app.get("/api/v1/healthz")
