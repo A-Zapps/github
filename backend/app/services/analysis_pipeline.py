@@ -35,6 +35,7 @@ from backend.app.ml.features import (
     parse_git_log_history,
 )
 from backend.app.ml.registry import get_model_registry
+from backend.app.recommend.rules import generate_recommendations
 from backend.app.services.quality_service import calculate_quality_scores
 
 logger = logging.getLogger(__name__)
@@ -645,6 +646,31 @@ async def execute_analysis_pipeline(analysis_id: int, job_id: str, repo_name: st
 
         stage_devs.status = "completed"
         stage_devs.finished_at = datetime.now(timezone.utc)
+        db.commit()
+
+        # Stage 12: Recommendations (Rule engine over results 5 to 11)
+        update_job(db, job_id, status="running", progress=99, stage="recommend")
+        stage_recs = StageRun(
+            analysis_id=analysis_id,
+            stage="recommend",
+            status="running",
+            started_at=datetime.now(timezone.utc),
+        )
+        db.add(stage_recs)
+        db.commit()
+
+        results_dict = {
+            "quality": quality_data,
+            "security": security_payload,
+            "bugs": bugs_payload,
+            "docs": docs_data,
+            "developers": dev_stats,
+        }
+        recs_list = generate_recommendations(results_dict)
+        save_result("recommendations", {"recommendations": recs_list, "total": len(recs_list)})
+
+        stage_recs.status = "completed"
+        stage_recs.finished_at = datetime.now(timezone.utc)
         db.commit()
 
         # Update analysis and job status

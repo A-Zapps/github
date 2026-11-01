@@ -326,3 +326,30 @@ def get_developers_data(analysis_id: int, db: Session = Depends(get_db)):
         },
     }
 
+
+@router.get("/{analysis_id}/recommendations")
+def get_recommendations_data(analysis_id: int, db: Session = Depends(get_db)):
+    """Fetch F10 Ranked evidence-backed recommendations."""
+    analysis = db.query(Analysis).filter(Analysis.id == analysis_id).first()
+    if not analysis:
+        raise AppError("NOT_FOUND", f"Analysis {analysis_id} not found.", status_code=404)
+
+    result = db.query(Result).filter(
+        Result.analysis_id == analysis_id,
+        Result.module == "recommendations",
+    ).first()
+
+    if not result:
+        raise AppError("ANALYSIS_NOT_READY", "Recommendations data is still processing.", status_code=409)
+
+    return {
+        "data": result.payload or {},
+        "meta": {
+            "analysis_id": analysis.id,
+            "head_sha": analysis.head_sha,
+            "analyzer_version": analysis.analyzer_version,
+            "model_versions": result.model_versions or {},
+            "generated_at": result.created_at.isoformat() if result.created_at else datetime.now(timezone.utc).isoformat(),
+        },
+    }
+

@@ -106,10 +106,10 @@ You will see: Documentation and Developer Analytics pages with real data.
 
 ## Phase 6: Recommendations and comparison (about 2 h)
 
-- [ ] T6.1 `recommend/rules.py`: each rule has an id, a condition on results, priority, effort, and evidence (file and line or metric). Tests per rule. Done when: no recommendation appears without evidence.
-- [ ] T6.2 `/recommendations` endpoint and Overview panel (top 5, link to the rest). Done when: each item links to the page that shows its evidence.
-- [ ] T6.3 `POST /compare` for 2 to 4 analyses, normalization, best-per-metric. Done when: comparing the same analysis twice is rejected.
-- [ ] T6.4 Repository Comparison page: metric table, radar, PCA scatter with corpus points. Done when: the radar values match the table.
+- [x] T6.1 `recommend/rules.py`: each rule has an id, a condition on results, priority, effort, and evidence (file and line or metric). Tests per rule. Done when: no recommendation appears without evidence.
+- [x] T6.2 `/recommendations` endpoint and Overview panel (top 5, link to the rest). Done when: each item links to the page that shows its evidence.
+- [x] T6.3 `POST /compare` for 2 to 4 analyses, normalization, best-per-metric. Done when: comparing the same analysis twice is rejected.
+- [x] T6.4 Repository Comparison page: metric table, radar, PCA scatter with corpus points. Done when: the radar values match the table.
 
 You will see: a ranked action list and a side-by-side comparison.
 

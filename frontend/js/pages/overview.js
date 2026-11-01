@@ -1,32 +1,53 @@
 /**
- * Overview dashboard page (F1, v1): quick analyze card, high-level metrics, and recent analyses table.
+ * Overview dashboard page (F1, F10): Quick analyze card, active analysis summary,
+ * top 5 evidence-backed recommendations panel, and recent analyses table.
  */
 
 import { api } from "../api.js";
-import { state } from "../state.js";
+import { state, subscribe } from "../state.js";
 import { h } from "../ui/h.js";
 import { icons } from "../ui/icons.js";
+
+function getPriorityBadge(priority) {
+  const p = (priority || "LOW").toUpperCase();
+  switch (p) {
+    case "CRITICAL":
+      return h("span", { className: "badge badge-danger", style: { fontWeight: "var(--font-bold)" } }, "CRITICAL");
+    case "HIGH":
+      return h("span", { className: "badge badge-danger" }, "HIGH");
+    case "MEDIUM":
+      return h("span", { className: "badge badge-warning" }, "MEDIUM");
+    default:
+      return h("span", { className: "badge badge-neutral" }, "LOW");
+  }
+}
 
 export default {
   title: "Overview",
 
   async mount(ctx) {
     this.container = ctx.container;
+    this.showAllRecs = false;
     this.render();
-    await this.loadRecentAnalyses();
+    await this.loadData();
+    this.unsubscribe = subscribe(() => this.loadData());
   },
 
-  unmount() {},
+  unmount() {
+    if (typeof this.unsubscribe === "function") {
+      this.unsubscribe();
+    }
+  },
 
   render() {
-    this.container.replaceChildren();
+    this.container.textContent = "";
 
     // 1. Quick Analyze Box
     const input = h("input", {
       type: "text",
       placeholder: "Analyze a repository (e.g. pallets/flask or https://github.com/...)",
-      className: "btn-secondary",
-      style: { flex: "1", padding: "0 12px", height: "36px", borderRadius: "6px" },
+      className: "input",
+      style: { flex: "1" },
     });
     const analyzeBtn = h("button", { className: "btn btn-primary" }, "Analyze");
 
@@ -34,7 +55,6 @@ export default {
       const val = input.value.trim();
       if (!val) return;
       window.location.hash = "#/analyzer";
-      // Allow analyzer view to receive the input
       setTimeout(() => {
         const targetInput = document.querySelector("#content input[type='text']");
         if (targetInput) {
@@ -49,45 +69,212 @@ export default {
       if (e.key === "Enter") analyzeBtn.click();
     });
 
-    const analyzeCard = h("div", { className: "card" },
-      h("h3", { className: "card-title" }, "Developer Intelligence Platform"),
-      h("p", { style: { color: "var(--text-2)", fontSize: "14px" } },
-        "Inspect code quality, security vulnerabilities, repository health, and machine-learning bug risks for any public GitHub repository."
+    const analyzeCard = h("div", { className: "card", style: { marginBottom: "var(--space-6)" } },
+      h("h3", { style: { fontSize: "var(--text-lg)", fontWeight: "var(--font-semibold)", marginBottom: "var(--space-1)" } }, "Analyze a GitHub Repository"),
+      h("p", { className: "text-muted", style: { fontSize: "var(--text-sm)", marginBottom: "var(--space-3)" } },
+        "Inspect code quality, security vulnerabilities, machine-learning bug risks, repository lifecycle health, and actionable recommendations."
       ),
-      h("div", { style: { display: "flex", gap: "8px", marginTop: "4px" } }, input, analyzeBtn)
+      h("div", { style: { display: "flex", gap: "var(--space-2)" } }, input, analyzeBtn)
     );
 
-    // 2. Metric Stat Cards
-    const statCards = [
-      { label: "Code Quality", value: state.currentAnalysisId ? "Evaluating..." : "--", icon: "quality" },
-      { label: "Bug Risk Tiers", value: state.currentAnalysisId ? "Evaluating..." : "--", icon: "bugs" },
-      { label: "Repository Health", value: state.currentAnalysisId ? "Evaluating..." : "--", icon: "health" },
-      { label: "Security Findings", value: state.currentAnalysisId ? "Evaluating..." : "--", icon: "security" },
-    ].map((sc) => h("div", { className: "card", style: { padding: "16px" } },
-      h("div", { style: { display: "flex", justifyContent: "space-between", color: "var(--text-2)" } },
-        h("span", { className: "text-caption" }, sc.label),
-        icons[sc.icon](16)
-      ),
-      h("span", { style: { fontSize: "24px", fontWeight: "600", marginTop: "8px" } }, sc.value)
-    ));
+    // 2. Active Analysis Overview Grid Placeholder
+    this.activeGrid = h("div", { className: "grid grid-4", style: { gap: "var(--space-4)", marginBottom: "var(--space-6)" } });
 
-    const statsGrid = h("div", {
-      style: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px" }
-    }, ...statCards);
+    // 3. Top 5 Recommendations Container
+    this.recsContainer = h("div", { style: { marginBottom: "var(--space-6)" } });
 
-    // 3. Recent Analyses Container
-    this.recentCard = h("div", { className: "card" },
-      h("div", { className: "card-header" },
-        h("h3", { className: "card-title" }, "Recent Analyses")
+    // 4. Recent Analyses Container
+    this.recentCard = h("div", { className: "card", style: { padding: "0", overflow: "hidden" } },
+      h("div", { style: { padding: "var(--space-4)", borderBottom: "1px solid var(--color-border)" } },
+        h("h3", { style: { fontSize: "var(--text-md)", fontWeight: "var(--font-semibold)" } }, "Recent Analyses")
       ),
       h("div", { id: "recent-table-wrapper" },
-        h("p", { className: "text-caption", style: { padding: "12px 0" } }, "Loading recent analyses...")
+        h("p", { className: "text-muted", style: { padding: "var(--space-4)", fontSize: "var(--text-xs)" } }, "Loading recent evaluations...")
       )
     );
 
     this.container.appendChild(analyzeCard);
-    this.container.appendChild(statsGrid);
+    this.container.appendChild(this.activeGrid);
+    this.container.appendChild(this.recsContainer);
     this.container.appendChild(this.recentCard);
+  },
+
+  async loadData() {
+    await Promise.all([
+      this.loadActiveMetrics(),
+      this.loadRecommendations(),
+      this.loadRecentAnalyses(),
+    ]);
+  },
+
+  async loadActiveMetrics() {
+    const analysisId = state.activeAnalysisId || state.currentAnalysisId;
+    this.activeGrid.textContent = "";
+
+    if (!analysisId) {
+      const cards = [
+        { label: "Code Quality", val: "--", sub: "Analyze a repo", route: "#/quality" },
+        { label: "Bug Risk Tiers", val: "--", sub: "Analyze a repo", route: "#/bugs" },
+        { label: "Security Findings", val: "--", sub: "Analyze a repo", route: "#/security" },
+        { label: "Repository Health", val: "--", sub: "Analyze a repo", route: "#/health" },
+      ].map((item) =>
+        h("div", { className: "card", style: { padding: "var(--space-4)" } },
+          h("div", { className: "text-muted", style: { fontSize: "10px", textTransform: "uppercase" } }, item.label),
+          h("div", { style: { fontSize: "var(--text-2xl)", fontWeight: "var(--font-bold)", marginTop: "4px" } }, item.val),
+          h("div", { className: "text-muted", style: { fontSize: "10px", marginTop: "2px" } }, item.sub)
+        )
+      );
+      this.activeGrid.append(...cards);
+      return;
+    }
+
+    try {
+      const [qRes, bRes, sRes, hRes] = await Promise.allSettled([
+        api.getQualityData(analysisId),
+        api.getBugsData(analysisId),
+        api.getSecurityData(analysisId),
+        api.getHealthData(analysisId),
+      ]);
+
+      const qData = qRes.status === "fulfilled" ? qRes.value.data : null;
+      const bData = bRes.status === "fulfilled" ? bRes.value.data : null;
+      const sData = sRes.status === "fulfilled" ? sRes.value.data : null;
+      const hData = hRes.status === "fulfilled" ? hRes.value.data : null;
+
+      const cards = [
+        h("a", { href: "#/quality", className: "card", style: { padding: "var(--space-4)", textDecoration: "none", color: "inherit" } },
+          h("div", { className: "text-muted", style: { fontSize: "10px", textTransform: "uppercase" } }, "Code Quality"),
+          h("div", { style: { fontSize: "var(--text-2xl)", fontWeight: "var(--font-bold)", marginTop: "4px", color: "var(--color-primary)" } },
+            qData ? `${qData.overall_score}/100` : "--"
+          ),
+          h("div", { className: "text-muted", style: { fontSize: "10px", marginTop: "2px" } },
+            qData ? `Grade ${qData.grade} Rating` : "Pending"
+          )
+        ),
+        h("a", { href: "#/bugs", className: "card", style: { padding: "var(--space-4)", textDecoration: "none", color: "inherit" } },
+          h("div", { className: "text-muted", style: { fontSize: "10px", textTransform: "uppercase" } }, "Bug Predictions"),
+          h("div", { style: { fontSize: "var(--text-2xl)", fontWeight: "var(--font-bold)", marginTop: "4px", color: bData && bData.summary?.high_risk > 0 ? "var(--color-danger)" : "var(--color-fg-default)" } },
+            bData && bData.summary ? `${bData.summary.high_risk} High Risk` : "--"
+          ),
+          h("div", { className: "text-muted", style: { fontSize: "10px", marginTop: "2px" } },
+            bData && bData.summary ? `${bData.summary.total_files} files analyzed` : "Pending"
+          )
+        ),
+        h("a", { href: "#/security", className: "card", style: { padding: "var(--space-4)", textDecoration: "none", color: "inherit" } },
+          h("div", { className: "text-muted", style: { fontSize: "10px", textTransform: "uppercase" } }, "Security Analysis"),
+          h("div", { style: { fontSize: "var(--text-2xl)", fontWeight: "var(--font-bold)", marginTop: "4px", color: sData && sData.total_issues > 0 ? "var(--color-danger)" : "var(--color-success)" } },
+            sData ? `${sData.total_issues} Issues` : "--"
+          ),
+          h("div", { className: "text-muted", style: { fontSize: "10px", marginTop: "2px" } },
+            sData ? `${sData.severity_summary?.HIGH || 0} High / Critical` : "Pending"
+          )
+        ),
+        h("a", { href: "#/health", className: "card", style: { padding: "var(--space-4)", textDecoration: "none", color: "inherit" } },
+          h("div", { className: "text-muted", style: { fontSize: "10px", textTransform: "uppercase" } }, "Repository Health"),
+          h("div", { style: { fontSize: "var(--text-2xl)", fontWeight: "var(--font-bold)", marginTop: "4px", color: "var(--color-primary)" } },
+            hData && hData.health ? hData.health.health_class : "--"
+          ),
+          h("div", { className: "text-muted", style: { fontSize: "10px", marginTop: "2px" } },
+            hData && hData.signals ? `${hData.signals.commits_per_month_mean || 0} commits / mo` : "Pending"
+          )
+        ),
+      ];
+
+      this.activeGrid.append(...cards);
+    } catch (e) {
+      // Ignore fallback
+    }
+  },
+
+  async loadRecommendations() {
+    const analysisId = state.activeAnalysisId || state.currentAnalysisId;
+    this.recsContainer.textContent = "";
+    if (!analysisId) return;
+
+    try {
+      const resp = await api.getRecommendations(analysisId);
+      const recs = resp.data?.recommendations || [];
+
+      if (recs.length === 0) return;
+
+      const topRecs = this.showAllRecs ? recs : recs.slice(0, 5);
+
+      const panel = h("div", { className: "card", style: { padding: "var(--space-5)" } },
+        h("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "var(--space-4)" } },
+          h("div", null,
+            h("h3", { style: { fontSize: "var(--text-md)", fontWeight: "var(--font-semibold)" } }, "Actionable Recommendations"),
+            h("p", { className: "text-muted", style: { fontSize: "var(--text-xs)", marginTop: "2px" } },
+              `Ranked priority actions with direct evidence from quality, security, and ML models.`
+            )
+          ),
+          h("span", { className: "badge badge-neutral" }, `${recs.length} total`)
+        ),
+        // List of recommendations
+        h("div", { style: { display: "flex", flexDirection: "column", gap: "var(--space-3)" } },
+          topRecs.map((r) => {
+            const ev = r.evidence || {};
+            const evString = ev.file
+              ? `${ev.file}${ev.line ? `:${ev.line}` : ""}`
+              : ev.package
+              ? `${ev.package} (${ev.advisory_id || "vulnerability"})`
+              : ev.duplication_percentage
+              ? `${ev.duplication_percentage}% duplicated`
+              : ev.section
+              ? `Missing section: ${ev.title}`
+              : Object.keys(ev).length > 0
+              ? JSON.stringify(ev)
+              : "Measured signal";
+
+            return h("div", {
+              style: {
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                padding: "var(--space-3)",
+                backgroundColor: "var(--color-bg-subtle)",
+                borderRadius: "var(--radius-md)",
+                gap: "var(--space-3)",
+              },
+            },
+              h("div", { style: { flex: "1" } },
+                h("div", { style: { display: "flex", alignItems: "center", gap: "var(--space-2)", marginBottom: "4px" } },
+                  getPriorityBadge(r.priority),
+                  h("span", { style: { fontWeight: "var(--font-semibold)", fontSize: "var(--text-sm)" } }, r.title),
+                  h("span", { className: "badge badge-neutral", style: { fontSize: "10px" } }, `Effort: ${r.effort}`)
+                ),
+                h("div", { className: "text-muted", style: { fontSize: "var(--text-xs)", marginBottom: "4px" } }, r.description),
+                h("div", { style: { display: "flex", alignItems: "center", gap: "var(--space-2)" } },
+                  h("span", { style: { fontSize: "10px", color: "var(--color-fg-muted)", textTransform: "uppercase" } }, "Evidence:"),
+                  h("code", { style: { fontSize: "10px", fontFamily: "var(--font-mono)", backgroundColor: "var(--color-bg-canvas)", padding: "1px 4px", borderRadius: "3px" } }, evString)
+                )
+              ),
+              h("a", {
+                href: r.target_page,
+                className: "btn btn-secondary",
+                style: { fontSize: "var(--text-xs)", whiteSpace: "nowrap" },
+              }, "View Evidence →")
+            );
+          })
+        ),
+        // Toggle view all
+        recs.length > 5
+          ? h("div", { style: { marginTop: "var(--space-3)", textAlign: "center" } },
+              h("button", {
+                className: "btn btn-secondary",
+                style: { fontSize: "var(--text-xs)" },
+                onClick: () => {
+                  this.showAllRecs = !this.showAllRecs;
+                  this.loadRecommendations();
+                },
+              }, this.showAllRecs ? "Show Top 5 Only ▲" : `View All ${recs.length} Recommendations ▼`)
+            )
+          : null
+      );
+
+      this.recsContainer.appendChild(panel);
+    } catch (e) {
+      // Ignore
+    }
   },
 
   async loadRecentAnalyses() {
@@ -100,39 +287,39 @@ export default {
 
       if (analyses.length === 0) {
         wrapper.replaceChildren(
-          h("div", { className: "empty-state", style: { padding: "32px 0" } },
-            h("p", { className: "empty-state-desc" }, "No analyses run yet. Submit a repository above to run your first evaluation.")
+          h("div", { className: "empty-state", style: { padding: "var(--space-8)" } },
+            h("p", { className: "text-muted" }, "No analyses run yet. Submit a repository above to run your first evaluation.")
           )
         );
         return;
       }
 
-      const table = h("table", { style: { width: "100%", fontSize: "13px", borderCollapse: "collapse" } },
-        h("thead", {},
-          h("tr", { style: { textAlign: "left", color: "var(--text-2)", borderBottom: "1px solid var(--border)" } },
-            h("th", { style: { padding: "8px" } }, "Repository"),
-            h("th", { style: { padding: "8px" } }, "Head SHA"),
-            h("th", { style: { padding: "8px" } }, "Status"),
-            h("th", { style: { padding: "8px" } }, "Date"),
-            h("th", { style: { padding: "8px", textAlign: "right" } }, "Action")
+      const table = h("table", { className: "table" },
+        h("thead", null,
+          h("tr", null,
+            h("th", null, "Repository"),
+            h("th", { style: { width: "120px" } }, "Head SHA"),
+            h("th", { style: { width: "120px" } }, "Status"),
+            h("th", { style: { width: "140px" } }, "Date"),
+            h("th", { style: { width: "100px", textAlign: "right" } }, "Action")
           )
         ),
-        h("tbody", {},
-          ...analyses.map((a) => {
-            const viewBtn = h("button", { className: "btn btn-secondary btn-sm" }, "View");
+        h("tbody", null,
+          analyses.map((a) => {
+            const viewBtn = h("button", { className: "btn btn-secondary", style: { fontSize: "var(--text-xs)" } }, "Inspect");
             viewBtn.addEventListener("click", () => {
-              state.setAnalysis(a.id, a.repo, a.head_sha);
+              if (state.setAnalysis) state.setAnalysis(a.id, a.repo, a.head_sha);
               window.location.hash = "#/analyzer";
             });
 
-            return h("tr", { style: { borderBottom: "1px solid var(--border)" } },
-              h("td", { style: { padding: "8px", fontWeight: "500" } }, a.repo),
-              h("td", { style: { padding: "8px", fontFamily: "var(--font-mono)" } }, a.head_sha ? a.head_sha.slice(0, 7) : "---"),
-              h("td", { style: { padding: "8px" } },
+            return h("tr", null,
+              h("td", { style: { fontWeight: "var(--font-semibold)" } }, a.repo),
+              h("td", { style: { fontFamily: "var(--font-mono)", fontSize: "var(--text-xs)" } }, a.head_sha ? a.head_sha.slice(0, 7) : "---"),
+              h("td", null,
                 h("span", { className: `badge ${a.status === "completed" ? "badge-success" : "badge-neutral"}` }, a.status)
               ),
-              h("td", { style: { padding: "8px", color: "var(--text-2)" } }, a.created_at ? new Date(a.created_at).toLocaleDateString() : "---"),
-              h("td", { style: { padding: "8px", textAlign: "right" } }, viewBtn)
+              h("td", { className: "text-muted", style: { fontSize: "var(--text-xs)" } }, a.created_at ? new Date(a.created_at).toLocaleDateString() : "---"),
+              h("td", { style: { textAlign: "right" } }, viewBtn)
             );
           })
         )
@@ -141,7 +328,7 @@ export default {
       wrapper.replaceChildren(table);
     } catch (err) {
       wrapper.replaceChildren(
-        h("p", { style: { color: "var(--danger)", fontSize: "13px" } }, "Failed to load recent analyses.")
+        h("p", { className: "text-muted", style: { padding: "var(--space-4)" } }, "Failed to load recent analyses.")
       );
     }
   },

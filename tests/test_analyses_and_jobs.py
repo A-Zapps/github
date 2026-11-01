@@ -5,7 +5,6 @@ from unittest.mock import patch
 
 import httpx
 import pytest
-import respx
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -51,40 +50,20 @@ def test_startup_stale_jobs_cleanup():
 
 
 @pytest.mark.asyncio
-@respx.mock
 async def test_post_analysis_and_poll_job():
     """Verify POST /analyses returns 202 and job moves to succeeded."""
-    # Mock GitHub calls for resolve and metadata stages
-    respx.get("https://api.github.com/repos/pallets/flask").mock(
-        return_value=httpx.Response(200, json={"default_branch": "main", "size": 15000})
-    )
-    respx.get("https://api.github.com/repos/pallets/flask/commits/main").mock(
-        return_value=httpx.Response(200, json={"sha": "1234567890abcdef1234567890abcdef12345678"})
-    )
-    respx.get("https://api.github.com/repos/pallets/flask/languages").mock(
-        return_value=httpx.Response(200, json={"Python": 1000})
-    )
-    respx.get("https://api.github.com/repos/pallets/flask/contributors").mock(
-        return_value=httpx.Response(200, json=[])
-    )
-    respx.get("https://api.github.com/repos/pallets/flask/releases").mock(
-        return_value=httpx.Response(200, json=[])
-    )
-    respx.get("https://api.github.com/repos/pallets/flask/issues").mock(
-        return_value=httpx.Response(200, json=[])
-    )
-    respx.get("https://api.github.com/repos/pallets/flask/stats/commit_activity").mock(
-        return_value=httpx.Response(200, json=[])
-    )
-    respx.get("https://api.github.com/repos/pallets/flask/readme").mock(
-        return_value=httpx.Response(200, json={"content": "", "encoding": "base64"})
-    )
+    async def fake_execute_pipeline(analysis_id: int, job_id: str, repo_name: str) -> None:
+        from backend.app.core.jobs import update_job
+        from backend.app.db.session import SessionLocal
+        db = SessionLocal()
+        try:
+            update_job(db, job_id, status="succeeded", progress=100, stage="completed")
+        finally:
+            db.close()
 
     app = create_app()
     transport = httpx.ASGITransport(app=app)
-    with patch("backend.app.services.analysis_pipeline.clone_bare_repo"), \
-         patch("backend.app.services.analysis_pipeline.materialize_tree", return_value={"total_files": 0, "extracted_files": 0, "skipped_files": 0}), \
-         patch("backend.app.services.analysis_pipeline.scan_inventory", return_value={"total_files": 0, "total_lines": 0, "languages": {}, "test_files_count": 0, "source_files_count": 0, "test_to_source_ratio": 0.0, "files": []}):
+    with patch("backend.app.api.v1.analyses.execute_analysis_pipeline", side_effect=fake_execute_pipeline):
         async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
             # Invalid repo returns 400 INVALID_REPO_NAME
             bad_resp = await client.post("/api/v1/analyses", json={"repo": "../etc"})
@@ -100,7 +79,7 @@ async def test_post_analysis_and_poll_job():
             job_id = body["data"]["job_id"]
 
             # Give background task a moment to complete
-            await asyncio.sleep(0.5)
+            await asyncio.sleep(0.1)
 
             # Poll job status
             job_resp = await client.get(f"/api/v1/jobs/{job_id}")

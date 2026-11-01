@@ -49,7 +49,7 @@ def analyze_file_metrics(file_path: Path, rel_path: str, content: Optional[str] 
         token_count = getattr(file_info, "token_count", 0)
         func_list = getattr(file_info, "function_list", [])
     else:
-        nloc = len([l for l in lines if l.strip() and not l.strip().startswith(("#", "//", "/*", "*"))])
+        nloc = len([line for line in lines if line.strip() and not line.strip().startswith(("#", "//", "/*", "*"))])
         token_count = max(0, loc * 5)
         func_list = []
 
