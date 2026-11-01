@@ -124,9 +124,9 @@ You will see: ask about a file and get an answer with working citations.
 
 ## Phase 8: Reports (about 2 h)
 
-- [ ] T8.1 `charts.py` (matplotlib, DESIGN palette). Done when: each chart uses the same data as the API.
-- [ ] T8.2 `builder.py` (ReportLab): all sections plus appendix with head SHA, versions, date, limits. Done when: a test with `<b>` and `&` in a repo-derived string produces a valid PDF.
-- [ ] T8.3 Report job, download endpoint, Reports page. Done when: the downloaded PDF opens and numbers match the screen.
+- [x] T8.1 `charts.py` (matplotlib, DESIGN palette). Done when: each chart uses the same data as the API.
+- [x] T8.2 `builder.py` (ReportLab): all sections plus appendix with head SHA, versions, date, limits. Done when: a test with `<b>` and `&` in a repo-derived string produces a valid PDF.
+- [x] T8.3 Report job, download endpoint, Reports page. Done when: the downloaded PDF opens and numbers match the screen.
 
 You will see: a PDF you can send to someone.
 
