@@ -1,0 +1,52 @@
+rules:
+  - id: python-sql-string-building
+    patterns:
+      - pattern-either:
+          - pattern: $DB.execute(f"...", ...)
+          - pattern: $DB.execute("..." % (...), ...)
+          - pattern: $DB.execute("...".format(...), ...)
+    message: "Detected potential SQL injection via string formatting or f-string in SQL execute statement."
+    severity: ERROR
+    languages: [python]
+
+  - id: javascript-inner-html
+    patterns:
+      - pattern: $EL.innerHTML = $X
+    message: "Direct assignment to innerHTML introduces Cross-Site Scripting (XSS) risks. Use textContent or DOM creation."
+    severity: WARNING
+    languages: [javascript, typescript]
+
+  - id: python-eval-exec
+    patterns:
+      - pattern-either:
+          - pattern: eval(...)
+          - pattern: exec(...)
+    message: "Use of eval() or exec() executes dynamic untrusted code."
+    severity: ERROR
+    languages: [python]
+
+  - id: python-subprocess-shell-true
+    patterns:
+      - pattern: subprocess.$FUNC(..., shell=True, ...)
+    message: "Spawning subprocess with shell=True enables shell injection."
+    severity: ERROR
+    languages: [python]
+
+  - id: python-unsafe-deserialization
+    patterns:
+      - pattern-either:
+          - pattern: pickle.loads(...)
+          - pattern: pickle.load(...)
+          - pattern: yaml.load($X, Loader=yaml.Loader)
+    message: "Unsafe deserialization using pickle or non-safe yaml.load() allows arbitrary code execution."
+    severity: ERROR
+    languages: [python]
+
+  - id: python-weak-hash
+    patterns:
+      - pattern-either:
+          - pattern: hashlib.md5(...)
+          - pattern: hashlib.sha1(...)
+    message: "Use of weak cryptographic hash (MD5/SHA1). Prefer SHA256 or SHA512."
+    severity: WARNING
+    languages: [python]
