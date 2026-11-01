@@ -69,7 +69,7 @@ You will see: Code Quality and Security pages with real findings for a real repo
 
 ## Phase 3: Dataset and training (about 5 h agent time, plus unattended dataset build)
 
-- [ ] T3.1 `analyzers/history.py` and `ml/features.py`: file and repo features as of a cutoff date. Done when: the as-of invariance test passes (add commits after the cutoff, features do not change).
+- [x] T3.1 `analyzers/history.py` and `ml/features.py`: file and repo features as of a cutoff date. Done when: the as-of invariance test passes (add commits after the cutoff, features do not change).
 - [ ] T3.2 `ml/labels.py`: bug-fix commit rule and the repo health rule from ARCHITECTURE 9.5. Done when: unit tests on hand-made commit lists give the expected labels. Thresholds frozen.
 - [ ] T3.3 `ml/build_dataset.py` and `sampling.py`: stratified sampler, resumable, per-repo timeout, clone deleted after features are saved, parquet output, manifest. Done when: a 5-repo dry run produces files and the manifest, and killing and restarting skips finished repos.
 - [ ] T3.4 [YOU] Run the dataset build for 400 repos. Leave it running. Time: 6 to 12 h unattended (guess, depends on network and rate limit). Done when: the manifest lists at least 300 repos with features and labels.
