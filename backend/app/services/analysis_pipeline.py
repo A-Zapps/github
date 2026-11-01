@@ -49,6 +49,8 @@ async def fetch_repository_metadata(github, owner: str, repo: str, db: Session) 
 
     # 2. Languages breakdown
     languages_raw = await github.request("GET", f"https://api.github.com/repos/{owner}/{repo}/languages", db=db)
+    if not isinstance(languages_raw, dict):
+        languages_raw = {}
     total_bytes = sum(languages_raw.values()) or 1
     languages_pct = {
         lang: round((count / total_bytes) * 100, 2)
@@ -97,6 +99,8 @@ async def fetch_repository_metadata(github, owner: str, repo: str, db: Session) 
         )
         if isinstance(issues_raw, list):
             for item in issues_raw:
+                if not isinstance(item, dict):
+                    continue
                 is_pr = "pull_request" in item
                 is_open = item.get("state") == "open"
                 if is_pr:
@@ -470,12 +474,21 @@ async def execute_analysis_pipeline(analysis_id: int, job_id: str, repo_name: st
         registry = get_model_registry()
 
         # Build feature rows for analyzed files
-        lizard_files = metrics_data.get("files", [])
+        raw_files = metrics_data.get("files", {})
+        if isinstance(raw_files, dict):
+            file_items = list(raw_files.values())
+        elif isinstance(raw_files, list):
+            file_items = raw_files
+        else:
+            file_items = []
+
         file_feature_rows = []
         file_paths = []
 
-        for f in lizard_files:
-            rel_path = f.get("filename", "")
+        for f in file_items:
+            if not isinstance(f, dict):
+                continue
+            rel_path = f.get("rel_path") or f.get("filename") or ""
             hist = file_history.get(rel_path, {})
             loc_val = f.get("nloc", f.get("loc", 0))
             is_test = 1 if rel_path.lower().startswith("test") or "test" in rel_path.lower() else 0
@@ -483,12 +496,12 @@ async def execute_analysis_pipeline(analysis_id: int, job_id: str, repo_name: st
             row = {
                 "loc": loc_val,
                 "nloc": f.get("nloc", loc_val),
-                "n_functions": len(f.get("functions", [])),
-                "ccn_max": f.get("max_ccn", 1.0),
-                "ccn_mean": f.get("avg_ccn", 1.0),
-                "ccn_p90": f.get("avg_ccn", 1.0) * 1.5,
+                "n_functions": len(f.get("functions", [])) if isinstance(f.get("functions"), list) else f.get("n_functions", 0),
+                "ccn_max": f.get("ccn_max", f.get("max_ccn", 1.0)),
+                "ccn_mean": f.get("ccn_mean", f.get("avg_ccn", 1.0)),
+                "ccn_p90": f.get("ccn_p90", f.get("avg_ccn", 1.0) * 1.5),
                 "token_count": f.get("token_count", loc_val * 5),
-                "params_max": 2,
+                "params_max": f.get("params_max", 2),
                 "commits_12m": hist.get("commits_12m", 0),
                 "authors_12m": hist.get("authors_12m", 0),
                 "lines_added_12m": hist.get("lines_added_12m", 0),
@@ -575,7 +588,7 @@ async def execute_analysis_pipeline(analysis_id: int, job_id: str, repo_name: st
                     **repo_history,
                     "total_files": inventory_data.get("total_files", 0),
                     "total_loc": inventory_data.get("total_loc", 0),
-                    "avg_maintainability": metrics_data.get("summary", {}).get("avg_mi", 75.0),
+                    "avg_maintainability": metrics_data.get("avg_maintainability_index", metrics_data.get("summary", {}).get("avg_mi", 75.0)),
                 }
                 health_pred = registry.predict_repo_health(health_input)
                 repo_health_data["health"] = health_pred
@@ -593,7 +606,7 @@ async def execute_analysis_pipeline(analysis_id: int, job_id: str, repo_name: st
                 cluster_input = {
                     "total_files": inventory_data.get("total_files", 0),
                     "total_loc": inventory_data.get("total_loc", 0),
-                    "avg_maintainability": metrics_data.get("summary", {}).get("avg_mi", 75.0),
+                    "avg_maintainability": metrics_data.get("avg_maintainability_index", metrics_data.get("summary", {}).get("avg_mi", 75.0)),
                     "duplication_pct": duplication_data.get("duplicate_ratio_pct", 0.0),
                     "test_ratio": (inventory_data.get("test_files", 0) / max(1, inventory_data.get("total_files", 1))),
                     "commits_per_month_mean": repo_history.get("commits_per_month_mean", 0.0),
@@ -692,7 +705,7 @@ async def execute_analysis_pipeline(analysis_id: int, job_id: str, repo_name: st
                 repo_chunks = chunk_repository(
                     src_dir=Path(src_dir),
                     source_files=source_files,
-                    lizard_files=metrics_data.get("files", []),
+                    lizard_files=file_items,
                 )
                 if repo_chunks:
                     emb = get_embedder()

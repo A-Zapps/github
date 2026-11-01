@@ -103,9 +103,11 @@ def chunk_repository(
     """Chunk all eligible source files in repository directory. Skip files over 200 KB."""
     func_map_by_path: Dict[str, List[Dict[str, Any]]] = {}
     if lizard_files:
-        for lf in lizard_files:
-            fname = lf.get("filename", "")
-            func_map_by_path[fname] = lf.get("functions", [])
+        items = lizard_files.values() if isinstance(lizard_files, dict) else lizard_files
+        for lf in items:
+            if isinstance(lf, dict):
+                fname = lf.get("rel_path") or lf.get("filename") or ""
+                func_map_by_path[fname] = lf.get("functions", [])
 
     all_chunks: List[Dict[str, Any]] = []
 
