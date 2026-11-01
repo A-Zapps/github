@@ -7,7 +7,7 @@ class AppState {
     this.currentAnalysisId = null;
     this.currentRepo = null;
     this.currentHeadSha = null;
-    this.rateLimit = { remaining: 5000, limit: 5000 };
+    this.rateLimit = { remaining: 5000, limit: 5000, reset: 0 };
     this.subscribers = new Set();
 
     // Restore analysis ID from URL search param if present (?a=12)
@@ -35,8 +35,8 @@ class AppState {
     this.notify();
   }
 
-  setRateLimit(remaining, limit) {
-    this.rateLimit = { remaining, limit };
+  setRateLimit(remaining, limit, reset = 0) {
+    this.rateLimit = { remaining, limit, reset };
     this.notify();
   }
 

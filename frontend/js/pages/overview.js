@@ -141,6 +141,27 @@ export default {
       const sData = sRes.status === "fulfilled" ? sRes.value.data : null;
       const hData = hRes.status === "fulfilled" ? hRes.value.data : null;
 
+      // Truncation banner for large repositories (T9.1)
+      const existingTrunc = this.container.querySelector(".truncation-banner");
+      if (existingTrunc) existingTrunc.remove();
+      if (qData && qData.truncated) {
+        const truncBanner = h("div", {
+          className: "badge badge-warning truncation-banner",
+          style: {
+            display: "flex",
+            alignItems: "center",
+            padding: "var(--space-3) var(--space-4)",
+            marginBottom: "var(--space-4)",
+            borderRadius: "var(--radius-md)",
+            fontSize: "var(--text-sm)",
+            width: "100%",
+          }
+        },
+        "Notice: Repository exceeds file cap (3,000 files). Analysis was performed on the materialized sample; results are partial."
+        );
+        this.container.insertBefore(truncBanner, this.activeGrid);
+      }
+
       const cards = [
         h("a", { href: "#/quality", className: "card", style: { padding: "var(--space-4)", textDecoration: "none", color: "inherit" } },
           h("div", { className: "text-muted", style: { fontSize: "10px", textTransform: "uppercase" } }, "Code Quality"),

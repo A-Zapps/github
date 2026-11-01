@@ -3,7 +3,7 @@
 
 import joblib
 
-from backend.app.ml.train_docs import (
+from ml.train_docs import (
     DOC_CLASSES,
     split_readme_sections,
     train_docs_model,

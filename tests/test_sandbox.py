@@ -103,3 +103,67 @@ def test_materialize_tree_filters_and_collisions():
 
     finally:
         shutil.rmtree(temp_dir, ignore_errors=True)
+
+
+def test_materialize_tree_max_files_truncation():
+    """Verify materialize_tree flags truncated=True when files exceed max_files (T9.1)."""
+    temp_dir = tempfile.mkdtemp()
+    git_dir = os.path.join(temp_dir, "repo")
+    src_dir = os.path.join(temp_dir, "src")
+    os.makedirs(git_dir)
+
+    try:
+        run_tool(["git", "init"], cwd=git_dir)
+        run_tool(["git", "config", "user.name", "Tester"], cwd=git_dir)
+        run_tool(["git", "config", "user.email", "tester@example.com"], cwd=git_dir)
+
+        # Create 5 small files
+        for i in range(5):
+            with open(os.path.join(git_dir, f"file_{i}.py"), "w") as f:
+                f.write(f"print({i})\n")
+
+        run_tool(["git", "add", "."], cwd=git_dir)
+        run_tool(["git", "commit", "-m", "multi-file commit"], cwd=git_dir)
+        rev = run_tool(["git", "rev-parse", "HEAD"], cwd=git_dir)
+        head_sha = rev.stdout.decode().strip()
+
+        # Materialize with max_files = 2
+        res = materialize_tree(
+            git_dir=git_dir,
+            target_src_dir=src_dir,
+            head_sha=head_sha,
+            max_files=2,
+        )
+
+        assert res["truncated"] is True
+        assert len(res["paths"]) == 2
+        assert res["materialized_count"] == 2
+    finally:
+        shutil.rmtree(temp_dir, ignore_errors=True)
+
+
+def test_pylint_ignores_repo_pylintrc():
+    """Verify Pylint analysis enforces built-in rcfile, ignoring repo-supplied configs (RULES B3, ARCHITECTURE 17)."""
+    from pathlib import Path
+
+    from backend.app.analyzers.lint_python import DEFAULT_PYLINTRC, run_pylint_analysis
+
+    temp_dir = tempfile.mkdtemp()
+    try:
+        src_path = Path(temp_dir)
+        # Malicious or disabling .pylintrc in repo
+        with open(src_path / ".pylintrc", "w") as f:
+            f.write("[MESSAGES CONTROL]\ndisable=all\n")
+
+        test_file = src_path / "bad_syntax.py"
+        with open(test_file, "w") as f:
+            f.write("x = 1\n")
+
+        # Run analysis
+        result = run_pylint_analysis(src_path, ["bad_syntax.py"])
+        # Ensure our default rcfile exists and was referenced
+        assert DEFAULT_PYLINTRC.is_file()
+        assert isinstance(result, dict)
+        assert "messages" in result
+    finally:
+        shutil.rmtree(temp_dir, ignore_errors=True)

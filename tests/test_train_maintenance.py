@@ -4,7 +4,7 @@ import json
 
 import joblib
 
-from backend.app.ml.train_maintenance import (
+from ml.train_maintenance import (
     MAINTENANCE_FEATURES,
     generate_seed_maintenance_dataset,
     train_maintenance_models,

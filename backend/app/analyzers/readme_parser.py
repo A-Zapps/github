@@ -1,10 +1,58 @@
 """README parser and documentation completeness analyzer (T5.1, RULES A1-A8, D1-D10)."""
 
+import re
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from backend.app.ml.registry import get_model_registry
-from backend.app.ml.train_docs import split_readme_sections
+
+# Heading patterns for weak labeling
+HEADING_PATTERNS = {
+    "installation": re.compile(r"\b(install\w*|setup|getting\s*started|prerequisites|requirements)\b", re.IGNORECASE),
+    "usage": re.compile(r"\b(usage|quickstart|examples?|how\s*to\s*use|commands|running|api|features)\b", re.IGNORECASE),
+    "contributing": re.compile(r"\b(contribut\w*|development|guidelines|pull\s*requests|dev\s*setup|testing)\b", re.IGNORECASE),
+    "license": re.compile(r"\b(licen[sc]e|copyright|authors|credits)\b", re.IGNORECASE),
+}
+
+
+def label_heading(heading_text: str) -> str:
+    """Assign weak label based on heading content."""
+    clean = heading_text.strip().lower()
+    for cat, pat in HEADING_PATTERNS.items():
+        if pat.search(clean):
+            return cat
+    return "other"
+
+
+def split_readme_sections(readme_text: str) -> List[Tuple[str, str]]:
+    """Split markdown text into (weak_label, body_text_without_heading)."""
+    lines = readme_text.splitlines()
+    sections: List[Tuple[str, List[str]]] = []
+    current_heading = "intro"
+    current_lines: List[str] = []
+
+    for line in lines:
+        match = re.match(r"^#{1,6}\s+(.+)$", line.strip())
+        if match:
+            if current_lines:
+                sections.append((current_heading, current_lines))
+                current_lines = []
+            current_heading = match.group(1).strip()
+        else:
+            current_lines.append(line)
+
+    if current_lines:
+        sections.append((current_heading, current_lines))
+
+    result = []
+    for heading, blines in sections:
+        body = "\n".join(blines).strip()
+        weak_label = label_heading(heading)
+        result.append((weak_label, body))
+
+    return result
+
+DOC_CLASSES = ["installation", "usage", "contributing", "license", "other"]
 
 EXPECTED_SECTIONS = {
     "installation": {

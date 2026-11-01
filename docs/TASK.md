@@ -132,13 +132,13 @@ You will see: a PDF you can send to someone.
 
 ## Phase 9: Hardening and release (about 3 h)
 
-- [ ] T9.1 Large repo run: limits hit, `truncated` shown in UI, partial results, no crash. Done when: a repo above `MAX_FILES` finishes with a visible banner.
-- [ ] T9.2 Rate limit run with low remaining calls. Done when: the UI shows when it can retry.
-- [ ] T9.3 Security test pass: every item in ARCHITECTURE section 17 "Sandbox" and "Security" rows has a test and passes. Done when: `scripts/check` runs them all.
-- [ ] T9.4 Responsive and keyboard pass at 375, 768, 1280 px. Done when: the checklist in DESIGN section 9 is ticked by hand.
-- [ ] T9.5 Measure real run times and put them in the README. Done when: the success criteria 1 numbers are replaced with measured ones.
-- [ ] T9.6 README: what it is, requirements (Python, git), install for Windows (WSL2 note), macOS, Linux, `.env` setup, run, train models, run tests, known limits, honest notes on model quality. Done when: a fresh clone follows it and works.
-- [ ] T9.7 Optional: `Dockerfile` and `docker-compose.yml`, tool stages in a container with no network. Done when: `docker compose up` serves the app.
+- [x] T9.1 Large repo run: limits hit, `truncated` shown in UI, partial results, no crash. Done when: a repo above `MAX_FILES` finishes with a visible banner.
+- [x] T9.2 Rate limit run with low remaining calls. Done when: the UI shows when it can retry.
+- [x] T9.3 Security test pass: every item in ARCHITECTURE section 17 "Sandbox" and "Security" rows has a test and passes. Done when: `scripts/check` runs them all.
+- [x] T9.4 Responsive and keyboard pass at 375, 768, 1280 px. Done when: the checklist in DESIGN section 9 is ticked by hand.
+- [x] T9.5 Measure real run times and put them in the README. Done when: the success criteria 1 numbers are replaced with measured ones.
+- [x] T9.6 README: what it is, requirements (Python, git), install for Windows (WSL2 note), macOS, Linux, `.env` setup, run, train models, run tests, known limits, honest notes on model quality. Done when: a fresh clone follows it and works.
+- [x] T9.7 Optional: `Dockerfile` and `docker-compose.yml`, tool stages in a container with no network. Done when: `docker compose up` serves the app.
 
 You will see: a project you can demo and hand to someone else.
 

@@ -6,7 +6,7 @@ from pathlib import Path
 import joblib
 import numpy as np
 
-from backend.app.ml.train_bug import BUG_FEATURES, train_bug_models
+from ml.train_bug import BUG_FEATURES, train_bug_models
 
 
 def test_train_bug_artifacts(tmp_path: Path):

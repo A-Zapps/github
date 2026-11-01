@@ -23,12 +23,12 @@ from backend.app.core.sandbox import (
     materialize_tree,
 )
 from backend.app.core.subprocess_runner import run_tool
-from backend.app.ml.labels import (
+from ml.labels import (
     compute_file_bug_labels,
     compute_file_maintenance_labels,
     compute_repo_health_label,
 )
-from backend.app.ml.sampling import sample_repositories
+from ml.sampling import sample_repositories
 
 logger = logging.getLogger(__name__)
 

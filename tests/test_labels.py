@@ -2,7 +2,7 @@
 
 import math
 
-from backend.app.ml.labels import (
+from ml.labels import (
     FROZEN_THRESHOLDS,
     compute_file_bug_labels,
     compute_file_maintenance_labels,

@@ -110,17 +110,37 @@ function initShell() {
     }
 
     if (rateLimitText && rateLimitFill) {
-      const { remaining, limit } = s.rateLimit;
-      rateLimitText.textContent = `${remaining.toLocaleString()} left`;
-      const pct = limit > 0 ? Math.round((remaining / limit) * 100) : 100;
+      const { remaining, limit, reset } = s.rateLimit;
+      if (remaining === 0 && reset) {
+        const timeStr = new Date(reset * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+        rateLimitText.textContent = `0 left (resets ${timeStr})`;
+        rateLimitText.title = `GitHub API rate limit exhausted. Resets at ${timeStr}.`;
+      } else if (remaining < 50 && remaining > 0 && reset) {
+        const timeStr = new Date(reset * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+        rateLimitText.textContent = `${remaining} left (resets ${timeStr})`;
+        rateLimitText.title = `GitHub API rate limit low: ${remaining}/${limit}. Resets at ${timeStr}.`;
+      } else {
+        rateLimitText.textContent = `${remaining.toLocaleString()} left`;
+        if (reset) {
+          rateLimitText.title = `GitHub API rate limit: ${remaining}/${limit}. Resets at ${new Date(reset * 1000).toLocaleTimeString()}.`;
+        }
+      }
+      const pct = limit > 0 ? Math.round((remaining / limit) * 100) : 0;
       rateLimitFill.style.width = `${pct}%`;
+      if (remaining === 0) {
+        rateLimitFill.style.backgroundColor = "var(--danger)";
+      } else if (remaining < 100) {
+        rateLimitFill.style.backgroundColor = "var(--warning)";
+      } else {
+        rateLimitFill.style.backgroundColor = "var(--primary)";
+      }
     }
   });
 
   // Fetch live rate limit on boot
   api.getRateLimit().then((res) => {
     if (res && res.data) {
-      state.setRateLimit(res.data.remaining, res.data.limit);
+      state.setRateLimit(res.data.remaining, res.data.limit, res.data.reset);
     }
   }).catch((e) => console.error("Initial rate limit fetch error:", e));
 

@@ -6,7 +6,7 @@ from pathlib import Path
 import joblib
 import numpy as np
 
-from backend.app.ml.train_health import HEALTH_FEATURES, train_health_models
+from ml.train_health import HEALTH_FEATURES, train_health_models
 
 
 def test_train_health_artifacts(tmp_path: Path):

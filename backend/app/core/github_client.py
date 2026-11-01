@@ -203,10 +203,19 @@ class GitHubClient:
         """Fetch current rate limit status."""
         url = "https://api.github.com/rate_limit"
         client = await self.get_client()
-        response = await client.get(url)
-        if response.status_code == 200:
-            return response.json()
-        return {"resources": {"core": {"limit": 60, "remaining": 0, "reset": 0}}}
+        try:
+            response = await client.get(url)
+            if response.status_code == 200:
+                return response.json()
+            reset_header = response.headers.get("x-ratelimit-reset", "0")
+            reset_ts = int(reset_header) if reset_header.isdigit() else 0
+            limit_header = response.headers.get("x-ratelimit-limit", "60")
+            limit_val = int(limit_header) if limit_header.isdigit() else 60
+            remaining_header = response.headers.get("x-ratelimit-remaining", "0")
+            remaining_val = int(remaining_header) if remaining_header.isdigit() else 0
+            return {"resources": {"core": {"limit": limit_val, "remaining": remaining_val, "reset": reset_ts}}}
+        except Exception:
+            return {"resources": {"core": {"limit": 60, "remaining": 0, "reset": 0}}}
 
 
 # Singleton instance

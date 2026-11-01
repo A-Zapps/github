@@ -4,7 +4,7 @@ import json
 
 import joblib
 
-from backend.app.ml.train_clusters import (
+from ml.train_clusters import (
     CLUSTER_FEATURES,
     generate_seed_cluster_dataset,
     train_cluster_models,

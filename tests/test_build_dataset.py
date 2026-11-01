@@ -5,8 +5,8 @@ from unittest.mock import patch
 
 import pandas as pd
 
-from backend.app.ml.build_dataset import build_dataset
-from backend.app.ml.sampling import sample_repositories
+from ml.build_dataset import build_dataset
+from ml.sampling import sample_repositories
 
 
 def test_sampling_deterministic():
@@ -71,7 +71,7 @@ def test_resumable_dry_run(tmp_path: Path):
 
     repos = ["test/repo1", "test/repo2", "test/repo3", "test/repo4", "test/repo5"]
 
-    with patch("backend.app.ml.build_dataset.extract_repo_features_and_labels", side_effect=mock_extract):
+    with patch("ml.build_dataset.extract_repo_features_and_labels", side_effect=mock_extract):
         # 1. First run: processes all 5 repos
         res1 = build_dataset(output_dir=out_dir, custom_repos=repos)
         assert res1["new_processed"] == 5

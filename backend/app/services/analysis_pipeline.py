@@ -302,6 +302,13 @@ async def execute_analysis_pipeline(analysis_id: int, job_id: str, repo_name: st
         stage_mat.finished_at = datetime.now(timezone.utc)
         db.commit()
 
+        # Update repository record if file tree was truncated
+        if mat_info.get("truncated"):
+            metadata_payload["truncated"] = metadata_payload.get("truncated", {})
+            metadata_payload["truncated"]["files"] = True
+            metadata_payload["truncated"]["materialized_count"] = mat_info.get("materialized_count", 0)
+            save_result("repository", metadata_payload)
+
         # Stage 5: Metrics (Inventory, Lizard, Radon, Duplication)
         update_job(db, job_id, status="running", progress=60, stage="metrics")
         stage_metrics = StageRun(
@@ -352,6 +359,8 @@ async def execute_analysis_pipeline(analysis_id: int, job_id: str, repo_name: st
         # Calculate Quality Scores & Tech Debt
         update_job(db, job_id, status="running", progress=80, stage="quality")
         quality_data = calculate_quality_scores(inventory_data, metrics_data, duplication_data, lint_data)
+        quality_data["truncated"] = mat_info.get("truncated", False)
+        quality_data["materialized_count"] = mat_info.get("materialized_count", len(source_files))
         save_result("quality", quality_data)
 
         # Stage 7: Security (Secrets scan, Semgrep, OSV dependencies)

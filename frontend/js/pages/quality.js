@@ -74,6 +74,26 @@ export default function renderQualityPage() {
       );
       container.appendChild(header);
 
+      // Truncation banner for large repositories (T9.1)
+      if (data.truncated) {
+        container.appendChild(
+          h("div", {
+            className: "badge badge-warning",
+            style: {
+              display: "flex",
+              alignItems: "center",
+              padding: "var(--space-3) var(--space-4)",
+              marginBottom: "var(--space-4)",
+              borderRadius: "var(--radius-md)",
+              fontSize: "var(--text-sm)",
+              width: "100%",
+            }
+          },
+          "Notice: Repository exceeds file cap (3,000 files). Analysis was performed on the materialized sample; results are partial."
+          )
+        );
+      }
+
       // 2. Overview Stats Row: Score Gauge, Tech Debt, Outliers
       const gradeColor = getGradeColor(data.grade);
       const statsGrid = h("div", { className: "grid grid-cols-3", style: { gap: "var(--space-4)", marginBottom: "var(--space-6)" } },
