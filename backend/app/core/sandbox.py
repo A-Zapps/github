@@ -90,7 +90,7 @@ def clone_bare_repo(repo_name: str, target_git_dir: str, months: int = 12, token
 
     argv = [
         "git", "clone", "--bare", "--single-branch", "--no-tags",
-        "--depth=300", "--no-recurse-submodules",
+        "--filter=blob:none", "--depth=100", "--no-recurse-submodules",
         repo_url, target_git_dir,
     ]
 
@@ -107,6 +107,14 @@ def clone_bare_repo(repo_name: str, target_git_dir: str, months: int = 12, token
     os.makedirs(parent_dir, exist_ok=True)
 
     result = run_tool(argv, timeout=180.0, cwd=parent_dir, env=extra_env)
+    if result.returncode != 0:
+        # Fallback to standard clone without blob filter
+        argv_fallback = [
+            "git", "clone", "--bare", "--single-branch", "--no-tags",
+            "--depth=100", "--no-recurse-submodules",
+            repo_url, target_git_dir,
+        ]
+        result = run_tool(argv_fallback, timeout=180.0, cwd=parent_dir, env=extra_env)
     if result.returncode != 0:
         err = result.stderr.decode("utf-8", errors="replace")
         raise AppError("STAGE_FAILED", f"Git clone failed: {err}", status_code=500)
@@ -129,7 +137,15 @@ def materialize_tree(
         cwd=git_dir,
     )
     if ls_result.returncode != 0:
-        raise AppError("STAGE_FAILED", "Failed to list git repository tree.", status_code=500)
+        # Fallback to HEAD if head_sha is not present in shallow clone
+        ls_result = run_tool(
+            ["git", "ls-tree", "-r", "-z", "-l", "HEAD"],
+            timeout=60.0,
+            cwd=git_dir,
+        )
+    if ls_result.returncode != 0:
+        err = ls_result.stderr.decode("utf-8", errors="replace").strip()
+        raise AppError("STAGE_FAILED", f"Failed to list git repository tree: {err or 'unknown error'}", status_code=500)
 
     # Output format per entry: "<mode> <type> <object> <size>\t<path>\0"
     raw_entries = ls_result.stdout.split(b"\0")

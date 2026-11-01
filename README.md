@@ -121,7 +121,7 @@ Double-click `start_server.bat` (or `run.bat`) in the root directory. It will au
 ### Option B: Terminal Command (Cross-Platform)
 Start the FastAPI application and static frontend server:
 ```bash
-uvicorn backend.app.main:app --reload --port 8000
+uvicorn backend.app.main:app --reload --reload-dir backend --reload-dir frontend --port 8000
 ```
 Open your browser and navigate to:
 ```

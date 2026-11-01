@@ -46,6 +46,6 @@ echo [INFO] Server running at: http://localhost:8000
 echo [INFO] Press Ctrl+C in this window to stop the server.
 echo.
 
-".venv\Scripts\python.exe" -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8000 --reload
+".venv\Scripts\python.exe" -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8000 --reload --reload-dir backend --reload-dir frontend
 
 pause
