@@ -62,8 +62,8 @@ You will see: type `pallets/flask`, watch the stages tick, get real stats and ch
 - [x] T2.6 Code Quality page (gauge, component bars, histograms, worst files). Done when: all numbers match the API and the chart table toggles work.
 - [x] T2.7 `secrets.py`: regex rules plus entropy check, masking. Done when: tests find fixture secrets, never return more than 4 characters, and skip obvious placeholders like `YOUR_KEY_HERE`.
 - [x] T2.8 Own Semgrep rules (SQL string building, `innerHTML`, `eval` and `exec`, `shell=True`, pickle and unsafe YAML load, weak hashes) and `semgrep_runner.py`, behind `ENABLE_SEMGREP`. Done when: with Semgrep off the stage reports "skipped: disabled", not an error.
-- [ ] T2.9 `deps_vulns.py`: parse `requirements*.txt`, `package-lock.json`, `poetry.lock`, `go.mod`, `Cargo.lock`, query OSV batch endpoint. Done when: a fixture with a known-vulnerable pinned version returns an advisory id.
-- [ ] T2.10 Security page (severity bar, tabs for code, secrets, dependencies). Done when: findings link to file and line, and no secret shows more than 4 characters.
+- [x] T2.9 `deps_vulns.py`: parse `requirements*.txt`, `package-lock.json`, `poetry.lock`, `go.mod`, `Cargo.lock`, query OSV batch endpoint. Done when: a fixture with a known-vulnerable pinned version returns an advisory id.
+- [x] T2.10 Security page (severity bar, tabs for code, secrets, dependencies). Done when: findings link to file and line, and no secret shows more than 4 characters.
 
 You will see: Code Quality and Security pages with real findings for a real repo.
 

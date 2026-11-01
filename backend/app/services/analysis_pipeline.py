@@ -8,10 +8,13 @@ from typing import Any, Dict, Optional
 
 from sqlalchemy.orm import Session
 
+from backend.app.analyzers.deps_vulns import analyze_dependencies_vulnerabilities
 from backend.app.analyzers.duplication import detect_duplication
 from backend.app.analyzers.inventory import scan_inventory
 from backend.app.analyzers.lint_python import analyze_python_lint
 from backend.app.analyzers.metrics import analyze_repository_metrics
+from backend.app.analyzers.secrets import scan_repository_secrets
+from backend.app.analyzers.semgrep_runner import run_semgrep_analysis
 from backend.app.config import get_settings
 from backend.app.core.github_client import get_github_client
 from backend.app.core.jobs import update_job
@@ -338,9 +341,74 @@ async def execute_analysis_pipeline(analysis_id: int, job_id: str, repo_name: st
         db.commit()
 
         # Calculate Quality Scores & Tech Debt
-        update_job(db, job_id, status="running", progress=85, stage="quality")
+        update_job(db, job_id, status="running", progress=80, stage="quality")
         quality_data = calculate_quality_scores(inventory_data, metrics_data, duplication_data, lint_data)
         save_result("quality", quality_data)
+
+        # Stage 7: Security (Secrets scan, Semgrep, OSV dependencies)
+        update_job(db, job_id, status="running", progress=90, stage="security")
+        stage_sec = StageRun(
+            analysis_id=analysis_id,
+            stage="security",
+            status="running",
+            started_at=datetime.now(timezone.utc),
+        )
+        db.add(stage_sec)
+        db.commit()
+
+        secrets_data = scan_repository_secrets(Path(src_dir), source_files)
+        semgrep_data = run_semgrep_analysis(Path(src_dir))
+        deps_data = await analyze_dependencies_vulnerabilities(Path(src_dir))
+
+        bandit_findings = lint_data.get("bandit", {}).get("findings", [])
+        sev_counts = {"CRITICAL": 0, "HIGH": 0, "MEDIUM": 0, "LOW": 0}
+        code_findings = []
+
+        for b in bandit_findings:
+            sev = b.get("severity", "LOW").upper()
+            if sev in sev_counts:
+                sev_counts[sev] += 1
+            code_findings.append({
+                "source": "Bandit",
+                "file": b.get("file"),
+                "line": b.get("line"),
+                "rule_id": b.get("test_id"),
+                "severity": sev,
+                "message": b.get("text"),
+            })
+
+        for s in semgrep_data.get("findings", []):
+            sev = s.get("severity", "WARNING").upper()
+            norm_sev = "HIGH" if sev == "ERROR" else "MEDIUM" if sev == "WARNING" else "LOW"
+            sev_counts[norm_sev] += 1
+            code_findings.append({
+                "source": "Semgrep",
+                "file": s.get("file"),
+                "line": s.get("line"),
+                "rule_id": s.get("check_id"),
+                "severity": norm_sev,
+                "message": s.get("message"),
+            })
+
+        for _ in secrets_data.get("findings", []):
+            sev_counts["HIGH"] += 1
+
+        for v in deps_data.get("vulnerabilities", []):
+            sev_counts["HIGH"] += len(v.get("advisories", []))
+
+        security_payload = {
+            "severity_summary": sev_counts,
+            "total_issues": sum(sev_counts.values()),
+            "code_findings": code_findings,
+            "secrets": secrets_data,
+            "dependencies": deps_data,
+            "semgrep_status": semgrep_data.get("status", "skipped"),
+        }
+        save_result("security", security_payload)
+
+        stage_sec.status = "completed"
+        stage_sec.finished_at = datetime.now(timezone.utc)
+        db.commit()
 
         # Update analysis and job status
         if analysis:
