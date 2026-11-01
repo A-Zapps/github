@@ -37,6 +37,23 @@ async def test_rate_limit_endpoint():
         resp = await client.get("/api/v1/github/rate-limit")
         assert resp.status_code == 200
         data = resp.json()["data"]
-        assert "remaining" in data
+        assert data["remaining"] in data or isinstance(data["remaining"], int)
         assert "limit" in data
         assert data["limit"] in (60, 5000)
+
+
+def test_quality_page_implementation():
+    """Verify quality.js page implementation conforms to F2 design requirements."""
+    import os
+    quality_js_path = os.path.join(
+        os.path.dirname(__file__), "../frontend/js/pages/quality.js"
+    )
+    with open(quality_js_path, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    assert "renderQualityPage" in content
+    assert "getQualityData" in content
+    assert "makeChartContainer" in content
+    assert "createHorizontalBarChart" in content
+    assert "estimate from fixed rules, not measured" in content
+    assert "Worst 10" in content

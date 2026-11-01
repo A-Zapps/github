@@ -57,6 +57,7 @@ export const api = {
   getRecentAnalyses: (limit = 10) => request(`/analyses?limit=${limit}`),
   getAnalysisSummary: (analysisId) => request(`/analyses/${analysisId}`),
   getRepositoryData: (analysisId) => request(`/analyses/${analysisId}/repository`),
+  getQualityData: (analysisId) => request(`/analyses/${analysisId}/quality`),
   getRateLimit: () => request("/github/rate-limit"),
   getSettings: () => request("/settings"),
 };

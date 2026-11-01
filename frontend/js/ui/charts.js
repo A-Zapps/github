@@ -103,6 +103,52 @@ export function createBarChart(canvas, labels, data, label = "Count") {
   });
 }
 
+export function createHorizontalBarChart(canvas, labels, data, label = "Max CCN") {
+  if (typeof window.Chart === "undefined") {
+    console.warn("Chart.js not loaded.");
+    return null;
+  }
+
+  return new window.Chart(canvas, {
+    type: "bar",
+    data: {
+      labels,
+      datasets: [
+        {
+          label,
+          data,
+          backgroundColor: "#5267D8",
+          borderRadius: 4,
+        },
+      ],
+    },
+    options: {
+      indexAxis: "y",
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        x: {
+          grid: { color: "#E3E6EB" },
+          ticks: { font: { family: "Inter, sans-serif", size: 11 }, color: "#5B6270" },
+        },
+        y: {
+          grid: { display: false },
+          ticks: { font: { family: "JetBrains Mono, monospace", size: 11 }, color: "#5B6270" },
+        },
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: "#20242C",
+          titleFont: { family: "Inter, sans-serif", size: 12 },
+          bodyFont: { family: "Inter, sans-serif", size: 12 },
+          cornerRadius: 8,
+        },
+      },
+    },
+  });
+}
+
 export function makeChartContainer(title, chartCanvas, tableNode) {
   const toggleBtn = h("button", { className: "btn btn-secondary btn-sm" }, "View as table");
   let isTable = false;
