@@ -1,0 +1,27 @@
+{
+  "task": "repo_health",
+  "best_model": "XGBoost",
+  "classes": [
+    "Inactive",
+    "Declining",
+    "Moderately Active",
+    "Healthy"
+  ],
+  "models": {
+    "MajorityClassBaseline": {
+      "macro_f1": 0.1,
+      "accuracy": 0.25,
+      "note": "Predicts most frequent training class"
+    },
+    "LogisticRegression": {
+      "macro_f1": 1.0,
+      "accuracy": 1.0
+    },
+    "XGBoost": {
+      "macro_f1": 1.0,
+      "accuracy": 1.0
+    }
+  },
+  "held_out_test_rows": 20,
+  "training_rows": 80
+}

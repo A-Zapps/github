@@ -1,0 +1,23 @@
+{
+  "seed": 42,
+  "created_at": "2026-11-01T05:30:52.797078+00:00",
+  "train_rows": 80,
+  "test_rows": 20,
+  "features": [
+    "commits_per_month_mean",
+    "commits_per_month_slope",
+    "last3m_to_prior9m_ratio",
+    "distinct_authors",
+    "new_authors_3m",
+    "days_since_last_commit",
+    "bus_factor",
+    "total_files",
+    "total_loc",
+    "avg_maintainability"
+  ],
+  "libraries": {
+    "scikit-learn": "1.4+",
+    "xgboost": "2.0+",
+    "pandas": "2.0+"
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "features": [
+    {
+      "name": "commits_per_month_mean",
+      "type": "float",
+      "description": "Commits per month mean"
+    },
+    {
+      "name": "commits_per_month_slope",
+      "type": "float",
+      "description": "Commits per month slope"
+    },
+    {
+      "name": "last3m_to_prior9m_ratio",
+      "type": "float",
+      "description": "Last3m to prior9m ratio"
+    },
+    {
+      "name": "distinct_authors",
+      "type": "float",
+      "description": "Distinct authors"
+    },
+    {
+      "name": "new_authors_3m",
+      "type": "float",
+      "description": "New authors 3m"
+    },
+    {
+      "name": "days_since_last_commit",
+      "type": "float",
+      "description": "Days since last commit"
+    },
+    {
+      "name": "bus_factor",
+      "type": "float",
+      "description": "Bus factor"
+    },
+    {
+      "name": "total_files",
+      "type": "float",
+      "description": "Total files"
+    },
+    {
+      "name": "total_loc",
+      "type": "float",
+      "description": "Total loc"
+    },
+    {
+      "name": "avg_maintainability",
+      "type": "float",
+      "description": "Avg maintainability"
+    }
+  ]
+}

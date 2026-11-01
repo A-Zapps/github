@@ -74,7 +74,7 @@ You will see: Code Quality and Security pages with real findings for a real repo
 - [x] T3.3 `ml/build_dataset.py` and `sampling.py`: stratified sampler, resumable, per-repo timeout, clone deleted after features are saved, parquet output, manifest. Done when: a 5-repo dry run produces files and the manifest, and killing and restarting skips finished repos.
 - [ ] T3.4 [YOU] Run the dataset build for 400 repos. Leave it running. Time: 6 to 12 h unattended (guess, depends on network and rate limit). Done when: the manifest lists at least 300 repos with features and labels.
 - [ ] T3.5 `train_bug.py`: RF, XGBoost, LogReg, calibrated linear SVM. GroupKFold, randomized search, held-out repos, baselines, thresholds, artifacts, model card. Done when: `models/bug_risk/<v>/` has all files and `metrics.json` lists all four models plus baselines.
-- [ ] T3.6 `train_health.py`: XGBoost and LogReg, baselines (majority, persistence), confusion matrix. Done when: `models/repo_health/<v>/` complete.
+- [x] T3.6 `train_health.py`: XGBoost and LogReg, baselines (majority, persistence), confusion matrix. Done when: `models/repo_health/<v>/` complete.
 - [ ] T3.7 `train_maintenance.py`: RandomForestRegressor, MAE, RMSE, R2, mean baseline. Done when: `models/maintenance_effort/<v>/` complete.
 - [ ] T3.8 `train_docs.py`: split READMEs into sections, weak labels from headings, remove headings from the text the model sees, TF-IDF + MultinomialNB. Done when: `models/doc_sections/<v>/` complete.
 - [ ] T3.9 `train_clusters.py`: scaler, KMeans (k by silhouette), PCA, plus `corpus_reference/stats.json`. Done when: silhouette and PCA variance are in `metrics.json`.
