@@ -64,35 +64,45 @@ def create_work_dir(analysis_id: int) -> str:
 
 def cleanup_work_dir(work_dir: str) -> None:
     """Guarantee safe deletion of analysis work directory in finally blocks (RULES B12)."""
-    if work_dir and os.path.isdir(work_dir):
-        try:
-            # Fix read-only permissions on Windows before removal
-            def remove_readonly(func, path, _):
+    if not work_dir:
+        return
+    abs_dir = os.path.abspath(work_dir)
+    if os.path.exists(abs_dir):
+        def remove_readonly(func, path, _):
+            try:
                 os.chmod(path, 0o777)
                 func(path)
+            except Exception:
+                pass
 
-            shutil.rmtree(work_dir, onerror=remove_readonly)
+        try:
+            shutil.rmtree(abs_dir, onerror=remove_readonly)
         except Exception:
             pass
 
 
 def clone_bare_repo(repo_name: str, target_git_dir: str, months: int = 12, token: Optional[str] = None) -> None:
     """Execute a bare shallow clone into target_git_dir without a working tree or hook execution."""
-    cutoff_date = (datetime.now(timezone.utc) - timedelta(days=months * 30)).strftime("%Y-%m-%d")
+    target_git_dir = os.path.abspath(target_git_dir)
+    if os.path.exists(target_git_dir):
+        cleanup_work_dir(target_git_dir)
+
     repo_url = f"https://github.com/{repo_name}.git"
 
     argv = [
         "git", "clone", "--bare", "--single-branch", "--no-tags",
-        f"--shallow-since={cutoff_date}", "--no-recurse-submodules",
+        "--depth=300", "--no-recurse-submodules",
         repo_url, target_git_dir,
     ]
 
     extra_env: Dict[str, str] = {}
     if token:
-        # Pass token securely via GIT_CONFIG headers without placing it in argv (ARCHITECTURE 7)
+        # Pass token securely via Basic Auth in GIT_CONFIG headers (GitHub Git HTTP expects Basic Auth)
+        import base64
+        auth_str = base64.b64encode(f"x-access-token:{token}".encode("utf-8")).decode("utf-8")
         extra_env["GIT_CONFIG_COUNT"] = "1"
         extra_env["GIT_CONFIG_KEY_0"] = "http.extraheader"
-        extra_env["GIT_CONFIG_VALUE_0"] = f"AUTHORIZATION: bearer {token}"
+        extra_env["GIT_CONFIG_VALUE_0"] = f"AUTHORIZATION: Basic {auth_str}"
 
     parent_dir = os.path.dirname(target_git_dir)
     os.makedirs(parent_dir, exist_ok=True)

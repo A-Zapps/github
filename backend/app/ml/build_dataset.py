@@ -59,7 +59,7 @@ def save_manifest(manifest_path: Path, manifest: Dict[str, Any]) -> None:
 
 
 def get_commit_sha_as_of(git_dir: str, cutoff_date: datetime) -> Optional[str]:
-    """Find the latest commit SHA strictly at or before cutoff_date."""
+    """Find the latest commit SHA strictly at or before cutoff_date, or fallback to oldest in clone."""
     argv = [
         "git", "log", "-1",
         f"--until={cutoff_date.isoformat()}",
@@ -68,7 +68,11 @@ def get_commit_sha_as_of(git_dir: str, cutoff_date: datetime) -> Optional[str]:
     try:
         proc = run_tool(argv, timeout=30.0, cwd=git_dir)
         sha = proc.stdout.decode("utf-8", errors="replace").strip()
-        return sha if sha else None
+        if sha:
+            return sha
+        # Fallback to earliest commit in clone if all commits are after cutoff
+        proc_rev = run_tool(["git", "log", "-1", "--reverse", "--pretty=format:%H"], timeout=30.0, cwd=git_dir)
+        return proc_rev.stdout.decode("utf-8", errors="replace").strip() or None
     except Exception:
         return None
 
