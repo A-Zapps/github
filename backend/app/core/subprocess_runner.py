@@ -9,7 +9,7 @@ from typing import Dict, List, Optional
 from backend.app.errors import AppError
 
 ALLOWED_TOOLS = {"git", "pylint", "bandit", "semgrep"}
-MAX_OUTPUT_BYTES = 10 * 1024 * 1024  # 10 MB output cap
+MAX_OUTPUT_BYTES = 100 * 1024 * 1024  # 100 MB output cap (matching MAX_REPO_SIZE_MB)
 
 # Common Windows install directories for developer tools
 DEFAULT_WINDOWS_TOOL_PATHS = [
@@ -44,6 +44,7 @@ def run_tool(
     timeout: float = 60.0,
     cwd: Optional[str] = None,
     env: Optional[Dict[str, str]] = None,
+    max_output_bytes: Optional[int] = None,
 ) -> subprocess.CompletedProcess:
     """Execute a tool command securely with strict isolation.
 
@@ -109,7 +110,8 @@ def run_tool(
         raise AppError("STAGE_FAILED", f"Failed to execute tool '{binary}': {exc}", status_code=500) from exc
 
     # Cap output size
-    if len(process.stdout) > MAX_OUTPUT_BYTES or len(process.stderr) > MAX_OUTPUT_BYTES:
-        raise AppError("STAGE_FAILED", f"Tool '{binary}' exceeded output cap ({MAX_OUTPUT_BYTES} bytes).", status_code=500)
+    effective_cap = max_output_bytes if max_output_bytes is not None else MAX_OUTPUT_BYTES
+    if len(process.stdout) > effective_cap or len(process.stderr) > effective_cap:
+        raise AppError("STAGE_FAILED", f"Tool '{binary}' exceeded output cap ({effective_cap} bytes).", status_code=500)
 
     return process

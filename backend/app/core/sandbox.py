@@ -128,9 +128,9 @@ def materialize_tree(
     os.makedirs(target_src_dir, exist_ok=True)
 
     # 1. Fast Path: Use git archive to export the complete tree in a single command (< 0.2s)
-    archive_result = run_tool(["git", "archive", head_sha], timeout=30.0, cwd=git_dir)
+    archive_result = run_tool(["git", "archive", head_sha], timeout=30.0, cwd=git_dir, max_output_bytes=100 * 1024 * 1024)
     if archive_result.returncode != 0:
-        archive_result = run_tool(["git", "archive", "HEAD"], timeout=30.0, cwd=git_dir)
+        archive_result = run_tool(["git", "archive", "HEAD"], timeout=30.0, cwd=git_dir, max_output_bytes=100 * 1024 * 1024)
 
     if archive_result.returncode == 0 and archive_result.stdout:
         try:
