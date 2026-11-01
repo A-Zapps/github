@@ -97,10 +97,10 @@ You will see: predictions on a real repo, and an honest Model Performance page.
 
 ## Phase 5: Documentation and developers (about 2 h)
 
-- [ ] T5.1 `readme_parser.py`, heading rules, `doc_sections` model, completeness score in `scoring.yaml`. Done when: fixtures with and without install and usage sections score differently and for the right reason.
-- [ ] T5.2 `/docs` endpoint and Documentation page. Done when: missing sections show as missing with a suggestion.
-- [ ] T5.3 `developer_stats.py`: contributors, commit rhythm, bus factor, PR merge time, issue close time. Done when: fixture history gives hand-checked values, and unavailable stats are marked `available: false`.
-- [ ] T5.4 `/developers` endpoint and Developer Analytics page (bar, heatmap, histograms). Done when: the heatmap totals equal the commit count used.
+- [x] T5.1 `readme_parser.py`, heading rules, `doc_sections` model, completeness score in `scoring.yaml`. Done when: fixtures with and without install and usage sections score differently and for the right reason.
+- [x] T5.2 `/docs` endpoint and Documentation page. Done when: missing sections show as missing with a suggestion.
+- [x] T5.3 `developer_stats.py`: contributors, commit rhythm, bus factor, PR merge time, issue close time. Done when: fixture history gives hand-checked values, and unavailable stats are marked `available: false`.
+- [x] T5.4 `/developers` endpoint and Developer Analytics page (bar, heatmap, histograms). Done when: the heatmap totals equal the commit count used.
 
 You will see: Documentation and Developer Analytics pages with real data.
 

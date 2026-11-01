@@ -9,10 +9,12 @@ from typing import Any, Dict, Optional
 from sqlalchemy.orm import Session
 
 from backend.app.analyzers.deps_vulns import analyze_dependencies_vulnerabilities
+from backend.app.analyzers.developer_stats import compute_developer_statistics
 from backend.app.analyzers.duplication import detect_duplication
 from backend.app.analyzers.inventory import scan_inventory
 from backend.app.analyzers.lint_python import analyze_python_lint
 from backend.app.analyzers.metrics import analyze_repository_metrics
+from backend.app.analyzers.readme_parser import parse_and_score_readme
 from backend.app.analyzers.secrets import scan_repository_secrets
 from backend.app.analyzers.semgrep_runner import run_semgrep_analysis
 from backend.app.config import get_settings
@@ -603,6 +605,46 @@ async def execute_analysis_pipeline(analysis_id: int, job_id: str, repo_name: st
 
         stage_predict.status = "completed"
         stage_predict.finished_at = datetime.now(timezone.utc)
+        db.commit()
+
+        # Stage 10: Docs (README parse, section classifier, score)
+        update_job(db, job_id, status="running", progress=98, stage="docs")
+        stage_docs = StageRun(
+            analysis_id=analysis_id,
+            stage="docs",
+            status="running",
+            started_at=datetime.now(timezone.utc),
+        )
+        db.add(stage_docs)
+        db.commit()
+
+        docs_data = parse_and_score_readme(Path(src_dir))
+        save_result("docs", docs_data)
+
+        stage_docs.status = "completed"
+        stage_docs.finished_at = datetime.now(timezone.utc)
+        db.commit()
+
+        # Stage 11: Developers (Contributor and activity analytics)
+        update_job(db, job_id, status="running", progress=99, stage="developers")
+        stage_devs = StageRun(
+            analysis_id=analysis_id,
+            stage="developers",
+            status="running",
+            started_at=datetime.now(timezone.utc),
+        )
+        db.add(stage_devs)
+        db.commit()
+
+        dev_stats = compute_developer_statistics(
+            commits=history_raw.get("window_commits", []),
+            pull_requests=metadata_payload.get("pull_requests", []),
+            issues=metadata_payload.get("issues", []),
+        )
+        save_result("developers", dev_stats)
+
+        stage_devs.status = "completed"
+        stage_devs.finished_at = datetime.now(timezone.utc)
         db.commit()
 
         # Update analysis and job status

@@ -272,3 +272,57 @@ def get_health_data(analysis_id: int, db: Session = Depends(get_db)):
         },
     }
 
+
+@router.get("/{analysis_id}/docs")
+def get_docs_data(analysis_id: int, db: Session = Depends(get_db)):
+    """Fetch F6 Documentation completeness and README analysis findings."""
+    analysis = db.query(Analysis).filter(Analysis.id == analysis_id).first()
+    if not analysis:
+        raise AppError("NOT_FOUND", f"Analysis {analysis_id} not found.", status_code=404)
+
+    result = db.query(Result).filter(
+        Result.analysis_id == analysis_id,
+        Result.module == "docs",
+    ).first()
+
+    if not result:
+        raise AppError("ANALYSIS_NOT_READY", "Documentation analysis data is still processing.", status_code=409)
+
+    return {
+        "data": result.payload or {},
+        "meta": {
+            "analysis_id": analysis.id,
+            "head_sha": analysis.head_sha,
+            "analyzer_version": analysis.analyzer_version,
+            "model_versions": result.model_versions or {"doc_sections": "1.0.0"},
+            "generated_at": result.created_at.isoformat() if result.created_at else datetime.now(timezone.utc).isoformat(),
+        },
+    }
+
+
+@router.get("/{analysis_id}/developers")
+def get_developers_data(analysis_id: int, db: Session = Depends(get_db)):
+    """Fetch F7 Developer analytics, contributor workload, bus factor, and commit rhythm."""
+    analysis = db.query(Analysis).filter(Analysis.id == analysis_id).first()
+    if not analysis:
+        raise AppError("NOT_FOUND", f"Analysis {analysis_id} not found.", status_code=404)
+
+    result = db.query(Result).filter(
+        Result.analysis_id == analysis_id,
+        Result.module == "developers",
+    ).first()
+
+    if not result:
+        raise AppError("ANALYSIS_NOT_READY", "Developer analytics data is still processing.", status_code=409)
+
+    return {
+        "data": result.payload or {},
+        "meta": {
+            "analysis_id": analysis.id,
+            "head_sha": analysis.head_sha,
+            "analyzer_version": analysis.analyzer_version,
+            "model_versions": result.model_versions or {},
+            "generated_at": result.created_at.isoformat() if result.created_at else datetime.now(timezone.utc).isoformat(),
+        },
+    }
+
