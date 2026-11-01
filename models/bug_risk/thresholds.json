@@ -1,0 +1,6 @@
+{
+  "low_max": 0.0,
+  "medium_max": 1.0,
+  "high_min": 1.0,
+  "note": "Cut points computed on validation set probabilities"
+}

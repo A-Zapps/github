@@ -1,0 +1,49 @@
+{
+  "task": "bug_risk",
+  "best_model": "RandomForest",
+  "primary_metric": "pr_auc",
+  "baselines": {
+    "PriorRateBaseline": {
+      "pr_auc": 0.325,
+      "roc_auc": 0.5,
+      "prior_rate": 0.325
+    },
+    "MostChangedFilesHeuristic": {
+      "pr_auc": 0.9473,
+      "f1": 0.8182,
+      "rule": "Top 20% most changed files"
+    }
+  },
+  "models": {
+    "RandomForest": {
+      "pr_auc": 1.0,
+      "roc_auc": 1.0,
+      "f1": 1.0,
+      "precision": 1.0,
+      "recall": 1.0
+    },
+    "LogisticRegression": {
+      "pr_auc": 1.0,
+      "roc_auc": 1.0,
+      "f1": 1.0,
+      "precision": 1.0,
+      "recall": 1.0
+    },
+    "CalibratedLinearSVM": {
+      "pr_auc": 1.0,
+      "roc_auc": 1.0,
+      "f1": 1.0,
+      "precision": 1.0,
+      "recall": 1.0
+    },
+    "XGBoost": {
+      "pr_auc": 1.0,
+      "roc_auc": 1.0,
+      "f1": 1.0,
+      "precision": 1.0,
+      "recall": 1.0
+    }
+  },
+  "held_out_test_rows": 40,
+  "training_rows": 160
+}
