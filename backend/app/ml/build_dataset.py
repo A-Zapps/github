@@ -256,3 +256,16 @@ def build_dataset(
         "repo_parquet": str(repo_parquet_path),
         "file_parquet": str(file_parquet_path),
     }
+
+
+if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser(description="Build training dataset across sampled repositories")
+    parser.add_argument("--count", type=int, default=20, help="Target number of repositories to sample")
+    args = parser.parse_args()
+
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+    print(f"Starting dataset build (target: {args.count} repos)...")
+    res = build_dataset(target_count=args.count)
+    print(f"Build completed! Total repos: {res['total_repos']}, total files: {res['total_files']}.")
+
