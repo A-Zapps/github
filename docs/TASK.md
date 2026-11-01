@@ -42,7 +42,7 @@ You will see: the empty dashboard in the final design, all pages reachable.
 
 ## Phase 1: Real GitHub data (about 3 h)
 
-- [ ] T1.0 [YOU] Create a GitHub personal access token with read-only public access. Put it in `.env` as `GITHUB_TOKEN`. Done when: `GET /github/rate-limit` (after T1.1) shows a limit of 5,000. Time: 5 min.
+- [x] T1.0 [YOU] Create a GitHub personal access token with read-only public access. Put it in `.env` as `GITHUB_TOKEN`. Done when: `GET /github/rate-limit` (after T1.1) shows a limit of 5,000. Time: 5 min.
 - [x] T1.1 `github_client.py`: shared async client, ETag cache, rate-limit handling, 202 retry, pagination caps, host allowlist. Tests with respx. Done when: tests cover 304, 403 with Retry-After, 202 then 200, and a blocked host.
 - [x] T1.2 Repo name validation, `POST /analyses`, job runner (process pool, startup cleanup), `GET /jobs/{id}`. Done when: posting `pallets/flask` returns 202 and the job moves from queued to succeeded, and `../etc` returns `INVALID_REPO_NAME`.
 - [x] T1.3 Stages 1 and 2 (resolve, metadata): repo info, languages, contributors, releases, capped issues and PRs, stats endpoints. Stored in `results[repository]`. Done when: `GET /analyses/{id}/repository` returns real numbers matching the GitHub page.
@@ -54,7 +54,7 @@ You will see: type `pallets/flask`, watch the stages tick, get real stats and ch
 
 ## Phase 2: Code quality and security (about 4 h)
 
-- [ ] T2.1 `inventory.py`: language detection by extension, test-file detection, ignore rules. Done when: a fixture repo gives the expected counts.
+- [x] T2.1 `inventory.py`: language detection by extension, test-file detection, ignore rules. Done when: a fixture repo gives the expected counts.
 - [ ] T2.2 `metrics.py`: Lizard for all files, Radon (CC, MI, Halstead) for Python. Done when: results for a fixture file match values worked out by hand.
 - [ ] T2.3 `duplication.py`: 6-line normalized window hashing. Done when: a fixture with a known copied block reports it and the percent is right.
 - [ ] T2.4 `lint_python.py`: Pylint and Bandit through `run_tool`, our configs, sampled files, timeouts. Done when: a fixture repo containing a hostile `pylintrc` with an `init-hook` does not execute it (test writes a marker file and asserts it does not exist).

@@ -42,7 +42,11 @@ class GitHubClient:
 
     async def get_client(self) -> httpx.AsyncClient:
         """Get or initialize the underlying httpx AsyncClient."""
-        if self._client is None or self._client.is_closed:
+        current_token = self.token or get_settings().GITHUB_TOKEN
+        if self._client is None or self._client.is_closed or self.token != current_token:
+            if self._client and not self._client.is_closed:
+                await self._client.aclose()
+            self.token = current_token
             headers = {
                 "Accept": "application/vnd.github+json",
                 "X-GitHub-Api-Version": "2022-11-28",
@@ -147,9 +151,20 @@ class GitHubClient:
                         retries += 1
                         await asyncio.sleep(wait_sec)
                         continue
+
+                    reset_str = ""
+                    if reset_time and reset_time.isdigit():
+                        try:
+                            from datetime import datetime
+                            reset_dt = datetime.fromtimestamp(int(reset_time))
+                            reset_str = f" Resets at {reset_dt.strftime('%H:%M:%S')}."
+                        except Exception:
+                            pass
+
+                    token_hint = "" if self.token else " Add GITHUB_TOKEN in .env to increase limit to 5,000 req/hr."
                     raise AppError(
                         "GITHUB_RATE_LIMITED",
-                        "GitHub API rate limit reached.",
+                        f"GitHub API rate limit reached.{reset_str}{token_hint}",
                         {"remaining": remaining, "reset": reset_time},
                         status_code=429,
                     )

@@ -6,7 +6,6 @@ import re
 from datetime import datetime, timezone
 from typing import Any, Dict
 
-
 # Patterns to redact from log messages
 TOKEN_PATTERNS = [
     re.compile(r"ghp_[A-Za-z0-9_]{36,255}"),

@@ -2,12 +2,12 @@
 
 from datetime import datetime
 from typing import Any, Dict, List, Optional
+
 from sqlalchemy import (
+    JSON,
     DateTime,
-    Float,
     ForeignKey,
     Integer,
-    JSON,
     LargeBinary,
     String,
     Text,
