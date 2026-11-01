@@ -2,9 +2,11 @@
  * Main application bootstrap and shell controller.
  */
 
+import { api } from "./api.js";
+import { Router } from "./router.js";
+import { state } from "./state.js";
 import { h } from "./ui/h.js";
 import { icons } from "./ui/icons.js";
-import { Router } from "./router.js";
 
 const NAV_ITEMS = [
   { id: "overview", label: "Overview", hash: "#/overview", icon: "overview" },
@@ -30,6 +32,9 @@ function initShell() {
   const backdrop = document.getElementById("drawer-backdrop");
   const topbarTitle = document.getElementById("topbar-title");
   const contentArea = document.getElementById("content-inner");
+  const repoChip = document.getElementById("repo-chip");
+  const rateLimitFill = document.getElementById("rate-limit-fill");
+  const rateLimitText = document.getElementById("rate-limit-text");
 
   // Render navigation links
   NAV_ITEMS.forEach((item) => {
@@ -46,7 +51,6 @@ function initShell() {
       h("span", { className: "nav-label" }, item.label)
     );
     navLink.addEventListener("click", () => {
-      // Close mobile drawer if opened
       sidebar.classList.remove("drawer-open");
       backdrop.classList.remove("active");
     });
@@ -57,9 +61,7 @@ function initShell() {
   let isCollapsed = false;
   try {
     isCollapsed = localStorage.getItem("sidebar_collapsed") === "true";
-  } catch (e) {
-    // Ignore localStorage access failures
-  }
+  } catch (e) {}
 
   function updateCollapseState(collapsed) {
     if (collapsed) {
@@ -93,6 +95,34 @@ function initShell() {
     sidebar.classList.remove("drawer-open");
     backdrop.classList.remove("active");
   });
+
+  // Sync state with Topbar (repo chip and rate limit meter)
+  state.subscribe((s) => {
+    if (repoChip) {
+      if (s.currentRepo) {
+        const shortSha = s.currentHeadSha ? ` @ ${s.currentHeadSha.slice(0, 7)}` : "";
+        repoChip.textContent = `${s.currentRepo}${shortSha}`;
+        repoChip.style.color = "var(--text)";
+      } else {
+        repoChip.textContent = "No repo selected";
+        repoChip.style.color = "var(--text-2)";
+      }
+    }
+
+    if (rateLimitText && rateLimitFill) {
+      const { remaining, limit } = s.rateLimit;
+      rateLimitText.textContent = `${remaining.toLocaleString()} left`;
+      const pct = limit > 0 ? Math.round((remaining / limit) * 100) : 100;
+      rateLimitFill.style.width = `${pct}%`;
+    }
+  });
+
+  // Fetch live rate limit on boot
+  api.getRateLimit().then((res) => {
+    if (res && res.data) {
+      state.setRateLimit(res.data.remaining, res.data.limit);
+    }
+  }).catch((e) => console.error("Initial rate limit fetch error:", e));
 
   // Initialize Router
   const router = new Router(contentArea, topbarTitle);

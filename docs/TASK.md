@@ -47,8 +47,8 @@ You will see: the empty dashboard in the final design, all pages reachable.
 - [x] T1.2 Repo name validation, `POST /analyses`, job runner (process pool, startup cleanup), `GET /jobs/{id}`. Done when: posting `pallets/flask` returns 202 and the job moves from queued to succeeded, and `../etc` returns `INVALID_REPO_NAME`.
 - [x] T1.3 Stages 1 and 2 (resolve, metadata): repo info, languages, contributors, releases, capped issues and PRs, stats endpoints. Stored in `results[repository]`. Done when: `GET /analyses/{id}/repository` returns real numbers matching the GitHub page.
 - [x] T1.4 `sandbox.py`: bare shallow clone and materialize (ARCHITECTURE section 7), plus `subprocess_runner.py`. Tests: `..` path, absolute path, symlink, oversize file, case collision, cleanup after failure. Done when: all those tests pass and a run leaves no work directory behind.
-- [ ] T1.5 Repository Analyzer page: input, stage stepper, results (stats row, languages donut, commits per week bar, README as plain text, file tree summary). Done when: analyzing `pallets/flask` fills the page with real data, and a bad name shows the error state.
-- [ ] T1.6 Overview page v1 (analyze box, recent analyses) and Settings page v1 (token set or not, rate limit, cache TTL). Done when: the rate-limit meter in the topbar shows live numbers.
+- [x] T1.5 Repository Analyzer page: input, stage stepper, results (stats row, languages donut, commits per week bar, README as plain text, file tree summary). Done when: analyzing `pallets/flask` fills the page with real data, and a bad name shows the error state.
+- [x] T1.6 Overview page v1 (analyze box, recent analyses) and Settings page v1 (token set or not, rate limit, cache TTL). Done when: the rate-limit meter in the topbar shows live numbers.
 
 You will see: type `pallets/flask`, watch the stages tick, get real stats and charts.
 
