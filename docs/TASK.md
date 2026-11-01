@@ -58,7 +58,7 @@ You will see: type `pallets/flask`, watch the stages tick, get real stats and ch
 - [x] T2.2 `metrics.py`: Lizard for all files, Radon (CC, MI, Halstead) for Python. Done when: results for a fixture file match values worked out by hand.
 - [x] T2.3 `duplication.py`: 6-line normalized window hashing. Done when: a fixture with a known copied block reports it and the percent is right.
 - [x] T2.4 `lint_python.py`: Pylint and Bandit through `run_tool`, our configs, sampled files, timeouts. Done when: a fixture repo containing a hostile `pylintrc` with an `init-hook` does not execute it (test writes a marker file and asserts it does not exist).
-- [ ] T2.5 `scoring.yaml` and the quality score, component scores, tech debt estimate. Done when: `GET /analyses/{id}/quality` returns the score, components, weights, and the label "estimate from fixed rules".
+- [x] T2.5 `scoring.yaml` and the quality score, component scores, tech debt estimate. Done when: `GET /analyses/{id}/quality` returns the score, components, weights, and the label "estimate from fixed rules".
 - [ ] T2.6 Code Quality page (gauge, component bars, histograms, worst files). Done when: all numbers match the API and the chart table toggles work.
 - [ ] T2.7 `secrets.py`: regex rules plus entropy check, masking. Done when: tests find fixture secrets, never return more than 4 characters, and skip obvious placeholders like `YOUR_KEY_HERE`.
 - [ ] T2.8 Own Semgrep rules (SQL string building, `innerHTML`, `eval` and `exec`, `shell=True`, pickle and unsafe YAML load, weak hashes) and `semgrep_runner.py`, behind `ENABLE_SEMGREP`. Done when: with Semgrep off the stage reports "skipped: disabled", not an error.

@@ -3,16 +3,28 @@
 import base64
 import logging
 from datetime import datetime, timezone
-from typing import Any, Dict
+from pathlib import Path
+from typing import Any, Dict, Optional
 
 from sqlalchemy.orm import Session
 
+from backend.app.analyzers.duplication import detect_duplication
+from backend.app.analyzers.inventory import scan_inventory
+from backend.app.analyzers.lint_python import analyze_python_lint
+from backend.app.analyzers.metrics import analyze_repository_metrics
 from backend.app.config import get_settings
 from backend.app.core.github_client import get_github_client
 from backend.app.core.jobs import update_job
+from backend.app.core.sandbox import (
+    cleanup_work_dir,
+    clone_bare_repo,
+    create_work_dir,
+    materialize_tree,
+)
 from backend.app.db.models import Analysis, Result, StageRun
 from backend.app.db.session import SessionLocal
 from backend.app.errors import AppError
+from backend.app.services.quality_service import calculate_quality_scores
 
 logger = logging.getLogger(__name__)
 ANALYZER_VERSION = "1.0.0"
@@ -152,6 +164,7 @@ async def execute_analysis_pipeline(analysis_id: int, job_id: str, repo_name: st
     db: Session = SessionLocal()
     github = get_github_client()
     settings = get_settings()
+    work_dir: Optional[str] = None
 
     try:
         update_job(db, job_id, status="running", progress=10, stage="resolve")
@@ -210,26 +223,124 @@ async def execute_analysis_pipeline(analysis_id: int, job_id: str, repo_name: st
 
         metadata_payload = await fetch_repository_metadata(github, owner, repo, db)
 
-        # Store in results[repository]
-        result_repo = db.query(Result).filter(
-            Result.analysis_id == analysis_id,
-            Result.module == "repository",
-        ).first()
+        # Helper to upsert module result
+        def save_result(mod: str, payload_data: Dict[str, Any]) -> None:
+            res_rec = db.query(Result).filter(
+                Result.analysis_id == analysis_id,
+                Result.module == mod,
+            ).first()
+            if res_rec:
+                res_rec.payload = payload_data
+            else:
+                res_rec = Result(
+                    analysis_id=analysis_id,
+                    module=mod,
+                    payload=payload_data,
+                    model_versions={},
+                )
+                db.add(res_rec)
+            db.commit()
 
-        if result_repo:
-            result_repo.payload = metadata_payload
-        else:
-            result_repo = Result(
-                analysis_id=analysis_id,
-                module="repository",
-                payload=metadata_payload,
-                model_versions={},
-            )
-            db.add(result_repo)
+        save_result("repository", metadata_payload)
 
         stage_metadata.status = "completed"
         stage_metadata.finished_at = datetime.now(timezone.utc)
         db.commit()
+
+        # Setup working directory for sandboxed file operations
+        work_dir = create_work_dir(analysis_id)
+        git_dir = str(Path(work_dir) / "git")
+        src_dir = str(Path(work_dir) / "src")
+
+        # Stage 3: Clone
+        update_job(db, job_id, status="running", progress=35, stage="clone")
+        stage_clone = StageRun(
+            analysis_id=analysis_id,
+            stage="clone",
+            status="running",
+            started_at=datetime.now(timezone.utc),
+        )
+        db.add(stage_clone)
+        db.commit()
+
+        clone_bare_repo(repo_name, git_dir, token=settings.GITHUB_TOKEN)
+        stage_clone.status = "completed"
+        stage_clone.finished_at = datetime.now(timezone.utc)
+        db.commit()
+
+        # Stage 4: Materialize
+        update_job(db, job_id, status="running", progress=45, stage="materialize")
+        stage_mat = StageRun(
+            analysis_id=analysis_id,
+            stage="materialize",
+            status="running",
+            started_at=datetime.now(timezone.utc),
+        )
+        db.add(stage_mat)
+        db.commit()
+
+        mat_info = materialize_tree(
+            git_dir=git_dir,
+            target_src_dir=src_dir,
+            head_sha=head_sha,
+            max_files=settings.MAX_FILES,
+            max_file_kb=settings.MAX_FILE_KB,
+        )
+        stage_mat.status = "completed"
+        stage_mat.finished_at = datetime.now(timezone.utc)
+        db.commit()
+
+        # Stage 5: Metrics (Inventory, Lizard, Radon, Duplication)
+        update_job(db, job_id, status="running", progress=60, stage="metrics")
+        stage_metrics = StageRun(
+            analysis_id=analysis_id,
+            stage="metrics",
+            status="running",
+            started_at=datetime.now(timezone.utc),
+        )
+        db.add(stage_metrics)
+        db.commit()
+
+        inventory_data = scan_inventory(src_dir)
+        source_files = [f["path"] for f in inventory_data.get("files", [])]
+        metrics_data = analyze_repository_metrics(Path(src_dir), source_files)
+        duplication_data = detect_duplication(Path(src_dir), source_files)
+
+        quality_raw = {
+            "inventory": inventory_data,
+            "metrics": metrics_data,
+            "duplication": duplication_data,
+            "materialize": mat_info,
+        }
+        save_result("quality_raw", quality_raw)
+
+        stage_metrics.status = "completed"
+        stage_metrics.finished_at = datetime.now(timezone.utc)
+        db.commit()
+
+        # Stage 6: Lint (Pylint and Bandit on sampled Python files)
+        update_job(db, job_id, status="running", progress=75, stage="lint")
+        stage_lint = StageRun(
+            analysis_id=analysis_id,
+            stage="lint",
+            status="running",
+            started_at=datetime.now(timezone.utc),
+        )
+        db.add(stage_lint)
+        db.commit()
+
+        python_files = [f for f in source_files if f.lower().endswith(".py")]
+        lint_data = analyze_python_lint(Path(src_dir), python_files)
+        save_result("lint", lint_data)
+
+        stage_lint.status = "completed"
+        stage_lint.finished_at = datetime.now(timezone.utc)
+        db.commit()
+
+        # Calculate Quality Scores & Tech Debt
+        update_job(db, job_id, status="running", progress=85, stage="quality")
+        quality_data = calculate_quality_scores(inventory_data, metrics_data, duplication_data, lint_data)
+        save_result("quality", quality_data)
 
         # Update analysis and job status
         if analysis:
@@ -266,4 +377,6 @@ async def execute_analysis_pipeline(analysis_id: int, job_id: str, repo_name: st
             error_message=err_msg,
         )
     finally:
+        if work_dir:
+            cleanup_work_dir(work_dir)
         db.close()

@@ -1,6 +1,7 @@
 """Unit tests for repository name validation, analysis enqueuing, and job progress tracking."""
 
 import asyncio
+from unittest.mock import patch
 
 import httpx
 import pytest
@@ -81,27 +82,30 @@ async def test_post_analysis_and_poll_job():
 
     app = create_app()
     transport = httpx.ASGITransport(app=app)
-    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
-        # Invalid repo returns 400 INVALID_REPO_NAME
-        bad_resp = await client.post("/api/v1/analyses", json={"repo": "../etc"})
-        assert bad_resp.status_code == 400
-        assert bad_resp.json()["error"]["code"] == "INVALID_REPO_NAME"
+    with patch("backend.app.services.analysis_pipeline.clone_bare_repo"), \
+         patch("backend.app.services.analysis_pipeline.materialize_tree", return_value={"total_files": 0, "extracted_files": 0, "skipped_files": 0}), \
+         patch("backend.app.services.analysis_pipeline.scan_inventory", return_value={"total_files": 0, "total_lines": 0, "languages": {}, "test_files_count": 0, "source_files_count": 0, "test_to_source_ratio": 0.0, "files": []}):
+        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+            # Invalid repo returns 400 INVALID_REPO_NAME
+            bad_resp = await client.post("/api/v1/analyses", json={"repo": "../etc"})
+            assert bad_resp.status_code == 400
+            assert bad_resp.json()["error"]["code"] == "INVALID_REPO_NAME"
 
-        # Valid repo returns 202 Accepted
-        resp = await client.post("/api/v1/analyses", json={"repo": "pallets/flask"})
-        assert resp.status_code == 202
-        body = resp.json()
-        assert "data" in body
-        assert body["data"]["repo"] == "pallets/flask"
-        job_id = body["data"]["job_id"]
+            # Valid repo returns 202 Accepted
+            resp = await client.post("/api/v1/analyses", json={"repo": "pallets/flask"})
+            assert resp.status_code == 202
+            body = resp.json()
+            assert "data" in body
+            assert body["data"]["repo"] == "pallets/flask"
+            job_id = body["data"]["job_id"]
 
-        # Give background task a moment to complete
-        await asyncio.sleep(0.5)
+            # Give background task a moment to complete
+            await asyncio.sleep(0.5)
 
-        # Poll job status
-        job_resp = await client.get(f"/api/v1/jobs/{job_id}")
-        assert job_resp.status_code == 200
-        job_data = job_resp.json()["data"]
-        assert job_data["id"] == job_id
-        assert job_data["status"] == "succeeded"
-        assert job_data["progress"] == 100
+            # Poll job status
+            job_resp = await client.get(f"/api/v1/jobs/{job_id}")
+            assert job_resp.status_code == 200
+            job_data = job_resp.json()["data"]
+            assert job_data["id"] == job_id
+            assert job_data["status"] == "succeeded"
+            assert job_data["progress"] == 100

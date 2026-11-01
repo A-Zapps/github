@@ -1,0 +1,30 @@
+# Quality scoring configuration and tech debt estimation weights
+# Label: "estimate from fixed rules, not measured"
+
+weights:
+  complexity: 0.20
+  maintainability: 0.20
+  duplication: 0.15
+  lint_density: 0.15
+  test_ratio: 0.15
+  file_size_outliers: 0.15
+
+tech_debt_minutes:
+  complexity_function_gt_10: 45
+  maintainability_index_below_50: 60
+  duplicated_block: 30
+  lint_error: 30
+  lint_warning: 15
+  lint_refactor: 20
+  lint_convention: 10
+  security_high: 120
+  security_medium: 60
+  security_low: 20
+  file_over_1000_loc: 90
+
+benchmarks:
+  # Reference percentiles for normal repos
+  complexity_ccn_gt_10_target: 0.10 # <= 10% is good
+  duplication_target: 5.0 # <= 5% is good
+  test_ratio_target: 0.20 # >= 20% test-to-source ratio is good
+  file_size_outliers_target: 0.05 # <= 5% files over 1000 lines is good

@@ -155,32 +155,31 @@ def get_analysis_summary(analysis_id: int, db: Session = Depends(get_db)):
             "generated_at": datetime.now(timezone.utc).isoformat(),
         },
     }
-    """Get high-level summary of a specific analysis."""
+
+
+@router.get("/{analysis_id}/quality")
+def get_quality_data(analysis_id: int, db: Session = Depends(get_db)):
+    """Fetch F2 Code Quality metrics, components, tech debt, and worst files."""
     analysis = db.query(Analysis).filter(Analysis.id == analysis_id).first()
     if not analysis:
         raise AppError("NOT_FOUND", f"Analysis {analysis_id} not found.", status_code=404)
 
-    stages = [
-        {"stage": s.stage, "status": s.status, "error": s.error_code}
-        for s in analysis.stage_runs
-    ]
+    result = db.query(Result).filter(
+        Result.analysis_id == analysis_id,
+        Result.module == "quality",
+    ).first()
+
+    if not result:
+        raise AppError("ANALYSIS_NOT_READY", "Code quality data is still processing.", status_code=409)
 
     return {
-        "data": {
-            "id": analysis.id,
-            "repo": analysis.repository.full_name if analysis.repository else "unknown",
-            "head_sha": analysis.head_sha,
-            "default_branch": analysis.default_branch,
-            "status": analysis.status,
-            "stages": stages,
-            "created_at": analysis.created_at.isoformat() if analysis.created_at else None,
-            "finished_at": analysis.finished_at.isoformat() if analysis.finished_at else None,
-        },
+        "data": result.payload,
         "meta": {
             "analysis_id": analysis.id,
             "head_sha": analysis.head_sha,
             "analyzer_version": analysis.analyzer_version,
-            "model_versions": {},
-            "generated_at": datetime.now(timezone.utc).isoformat(),
+            "model_versions": result.model_versions or {},
+            "generated_at": result.created_at.isoformat() if result.created_at else datetime.now(timezone.utc).isoformat(),
         },
     }
+
