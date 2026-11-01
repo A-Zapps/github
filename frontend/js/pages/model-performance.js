@@ -8,7 +8,7 @@ import { api } from "../api.js";
 import { h } from "../ui/h.js";
 import { icons } from "../ui/icons.js";
 
-export default function renderModelPerformancePage() {
+function renderModelPerformancePage() {
   const container = h("div", { className: "page-container" });
   let expandedCard = null; // model name of currently viewed model card
 
@@ -211,6 +211,12 @@ export default function renderModelPerformancePage() {
   }
 
   loadData();
+
+  return {
+    element: container,
+    destroy: () => {},
+  };
+}
 
 const modelPerformancePage = {
   title: "Model Performance",

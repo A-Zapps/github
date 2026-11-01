@@ -23,7 +23,7 @@ function getSeverityBadge(severity) {
   }
 }
 
-export default function renderSecurityPage() {
+function renderSecurityPage() {
   const container = h("div", { className: "page-container" });
   let activeTab = "code"; // "code" | "secrets" | "deps"
 
@@ -260,12 +260,31 @@ export default function renderSecurityPage() {
     }
   }
 
-  const unsubscribe = subscribe((key) => {
-    if (key === "activeAnalysisId" || key === "activeRepo") {
-      loadData();
-    }
+  const unsubscribe = subscribe(() => {
+    loadData();
   });
 
   loadData();
-  return container;
+
+  return {
+    element: container,
+    destroy: () => unsubscribe(),
+  };
 }
+
+const securityPage = {
+  title: "Security Analysis",
+  instance: null,
+  async mount(ctx) {
+    this.instance = renderSecurityPage();
+    ctx.container.replaceChildren(this.instance.element);
+  },
+  unmount() {
+    if (this.instance && typeof this.instance.destroy === "function") {
+      this.instance.destroy();
+      this.instance = null;
+    }
+  },
+};
+
+export default securityPage;

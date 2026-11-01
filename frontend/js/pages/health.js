@@ -22,7 +22,7 @@ function getHealthClassBadge(cls) {
   return h("span", { className: "badge badge-danger", style: { fontSize: "var(--text-md)", padding: "var(--space-2) var(--space-4)" } }, "INACTIVE");
 }
 
-export default function renderHealthPage() {
+function renderHealthPage() {
   const container = h("div", { className: "page-container" });
 
   async function loadData() {
@@ -240,6 +240,12 @@ export default function renderHealthPage() {
 
   const unsubscribe = subscribe(loadData);
   loadData();
+
+  return {
+    element: container,
+    destroy: () => unsubscribe(),
+  };
+}
 
 const healthPage = {
   title: "Repository Health",

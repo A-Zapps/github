@@ -18,6 +18,22 @@ class AppState {
     }
   }
 
+  get activeAnalysisId() {
+    return this.currentAnalysisId;
+  }
+
+  set activeAnalysisId(val) {
+    this.currentAnalysisId = val;
+  }
+
+  get activeRepo() {
+    return this.currentRepo;
+  }
+
+  set activeRepo(val) {
+    this.currentRepo = val;
+  }
+
   setAnalysis(analysisId, repo = null, headSha = null) {
     this.currentAnalysisId = analysisId;
     if (repo) this.currentRepo = repo;
@@ -57,3 +73,4 @@ class AppState {
 }
 
 export const state = new AppState();
+export const subscribe = (callback) => state.subscribe(callback);

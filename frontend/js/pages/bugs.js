@@ -20,7 +20,7 @@ function getTierBadge(tier) {
   }
 }
 
-export default function renderBugsPage() {
+function renderBugsPage() {
   const container = h("div", { className: "page-container" });
   let tierFilter = "all"; // "all" | "high" | "medium" | "low"
   let searchQuery = "";
@@ -244,6 +244,12 @@ export default function renderBugsPage() {
 
   const unsubscribe = subscribe(loadData);
   loadData();
+
+  return {
+    element: container,
+    destroy: () => unsubscribe(),
+  };
+}
 
 const bugsPage = {
   title: "Bug Prediction",

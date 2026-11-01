@@ -20,7 +20,7 @@ function getGradeColor(grade) {
   }
 }
 
-export default function renderQualityPage() {
+function renderQualityPage() {
   const container = h("div", { className: "page-container" });
 
   let chartInstance = null;
@@ -298,13 +298,34 @@ export default function renderQualityPage() {
   }
 
   // Subscribe to state updates when activeAnalysisId changes
-  const unsubscribe = subscribe((key) => {
-    if (key === "activeAnalysisId" || key === "activeRepo") {
-      loadData();
-    }
+  const unsubscribe = subscribe(() => {
+    loadData();
   });
 
   loadData();
 
-  return container;
+  return {
+    element: container,
+    destroy: () => {
+      cleanup();
+      unsubscribe();
+    },
+  };
 }
+
+const qualityPage = {
+  title: "Code Quality",
+  instance: null,
+  async mount(ctx) {
+    this.instance = renderQualityPage();
+    ctx.container.replaceChildren(this.instance.element);
+  },
+  unmount() {
+    if (this.instance && typeof this.instance.destroy === "function") {
+      this.instance.destroy();
+      this.instance = null;
+    }
+  },
+};
+
+export default qualityPage;
