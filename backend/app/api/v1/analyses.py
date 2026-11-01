@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from backend.app.core.jobs import create_job
 from backend.app.core.repo_validation import normalize_and_validate_repo_name
-from backend.app.db.models import Analysis, Repository
+from backend.app.db.models import Analysis, Repository, Result
 from backend.app.db.session import get_db
 from backend.app.errors import AppError
 from backend.app.schemas.analyses import AnalyzeRequest
@@ -97,8 +97,64 @@ def list_analyses(limit: int = 10, db: Session = Depends(get_db)):
     }
 
 
+@router.get("/{analysis_id}/repository")
+def get_repository_data(analysis_id: int, db: Session = Depends(get_db)):
+    """Fetch F1 repository details and metadata from results[repository]."""
+    analysis = db.query(Analysis).filter(Analysis.id == analysis_id).first()
+    if not analysis:
+        raise AppError("NOT_FOUND", f"Analysis {analysis_id} not found.", status_code=404)
+
+    result = db.query(Result).filter(
+        Result.analysis_id == analysis_id,
+        Result.module == "repository",
+    ).first()
+
+    if not result:
+        raise AppError("ANALYSIS_NOT_READY", "Repository metadata is still processing.", status_code=409)
+
+    return {
+        "data": result.payload,
+        "meta": {
+            "analysis_id": analysis.id,
+            "head_sha": analysis.head_sha,
+            "analyzer_version": analysis.analyzer_version,
+            "model_versions": result.model_versions or {},
+            "generated_at": result.created_at.isoformat() if result.created_at else datetime.now(timezone.utc).isoformat(),
+        },
+    }
+
+
 @router.get("/{analysis_id}")
 def get_analysis_summary(analysis_id: int, db: Session = Depends(get_db)):
+    """Get high-level summary of a specific analysis."""
+    analysis = db.query(Analysis).filter(Analysis.id == analysis_id).first()
+    if not analysis:
+        raise AppError("NOT_FOUND", f"Analysis {analysis_id} not found.", status_code=404)
+
+    stages = [
+        {"stage": s.stage, "status": s.status, "error": s.error_code}
+        for s in analysis.stage_runs
+    ]
+
+    return {
+        "data": {
+            "id": analysis.id,
+            "repo": analysis.repository.full_name if analysis.repository else "unknown",
+            "head_sha": analysis.head_sha,
+            "default_branch": analysis.default_branch,
+            "status": analysis.status,
+            "stages": stages,
+            "created_at": analysis.created_at.isoformat() if analysis.created_at else None,
+            "finished_at": analysis.finished_at.isoformat() if analysis.finished_at else None,
+        },
+        "meta": {
+            "analysis_id": analysis.id,
+            "head_sha": analysis.head_sha,
+            "analyzer_version": analysis.analyzer_version,
+            "model_versions": {},
+            "generated_at": datetime.now(timezone.utc).isoformat(),
+        },
+    }
     """Get high-level summary of a specific analysis."""
     analysis = db.query(Analysis).filter(Analysis.id == analysis_id).first()
     if not analysis:

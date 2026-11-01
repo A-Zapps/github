@@ -53,12 +53,30 @@ def test_startup_stale_jobs_cleanup():
 @respx.mock
 async def test_post_analysis_and_poll_job():
     """Verify POST /analyses returns 202 and job moves to succeeded."""
-    # Mock GitHub calls for resolve stage
+    # Mock GitHub calls for resolve and metadata stages
     respx.get("https://api.github.com/repos/pallets/flask").mock(
         return_value=httpx.Response(200, json={"default_branch": "main", "size": 15000})
     )
     respx.get("https://api.github.com/repos/pallets/flask/commits/main").mock(
         return_value=httpx.Response(200, json={"sha": "1234567890abcdef1234567890abcdef12345678"})
+    )
+    respx.get("https://api.github.com/repos/pallets/flask/languages").mock(
+        return_value=httpx.Response(200, json={"Python": 1000})
+    )
+    respx.get("https://api.github.com/repos/pallets/flask/contributors").mock(
+        return_value=httpx.Response(200, json=[])
+    )
+    respx.get("https://api.github.com/repos/pallets/flask/releases").mock(
+        return_value=httpx.Response(200, json=[])
+    )
+    respx.get("https://api.github.com/repos/pallets/flask/issues").mock(
+        return_value=httpx.Response(200, json=[])
+    )
+    respx.get("https://api.github.com/repos/pallets/flask/stats/commit_activity").mock(
+        return_value=httpx.Response(200, json=[])
+    )
+    respx.get("https://api.github.com/repos/pallets/flask/readme").mock(
+        return_value=httpx.Response(200, json={"content": "", "encoding": "base64"})
     )
 
     app = create_app()
