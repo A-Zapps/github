@@ -11,6 +11,7 @@ from fastapi.staticfiles import StaticFiles
 from backend.app.api.v1.analyses import router as analyses_router
 from backend.app.api.v1.github import router as github_router
 from backend.app.api.v1.jobs import router as jobs_router
+from backend.app.api.v1.models import router as models_router
 from backend.app.api.v1.settings import router as settings_router
 from backend.app.config import get_settings
 from backend.app.core.jobs import cleanup_stale_jobs_on_startup
@@ -72,6 +73,7 @@ def create_app() -> FastAPI:
     app.include_router(github_router, prefix="/api/v1")
     app.include_router(analyses_router, prefix="/api/v1")
     app.include_router(jobs_router, prefix="/api/v1")
+    app.include_router(models_router, prefix="/api/v1")
     app.include_router(settings_router, prefix="/api/v1")
 
     # API v1 Health Check

@@ -137,6 +137,62 @@ export default function renderQualityPage() {
       );
       container.appendChild(statsGrid);
 
+      // Corpus Percentiles & Maintenance Effort (RULES D8 & T4.6)
+      const corpusPercentiles = data.corpus_percentiles || {};
+      const maintEffort = data.maintenance_effort || {};
+
+      if (Object.keys(corpusPercentiles).length > 0 || maintEffort.status === "ready") {
+        const mlInsightsRow = h("div", { className: "grid grid-2", style: { gap: "var(--space-4)", marginBottom: "var(--space-6)" } },
+          // Percentile vs Corpus Card
+          h("div", { className: "card", style: { padding: "var(--space-5)" } },
+            h("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "var(--space-2)" } },
+              h("div", { className: "text-muted", style: { fontSize: "var(--text-xs)", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: "var(--font-semibold)" } }, "Percentile vs Corpus Reference"),
+              h("span", { className: "badge badge-neutral", style: { fontSize: "10px" } }, "corpus_reference")
+            ),
+            h("p", { className: "text-muted", style: { fontSize: "var(--text-xs)", marginBottom: "var(--space-3)" } },
+              "Relative standing against multi-repository open source benchmark distribution (higher is better for maintainability/tests; lower is better for duplication)."
+            ),
+            h("div", { style: { display: "flex", flexDirection: "column", gap: "var(--space-2)" } },
+              [
+                { label: "Maintainability Index", key: "avg_maintainability" },
+                { label: "Code Scale (LOC)", key: "total_loc" },
+                { label: "Duplication Inversion", key: "duplication_pct" },
+                { label: "Testing Coverage Ratio", key: "test_ratio" },
+              ].map((item) => {
+                const pVal = corpusPercentiles[item.key] !== undefined ? Math.round(corpusPercentiles[item.key]) : 50;
+                return h("div", { style: { display: "flex", alignItems: "center", gap: "var(--space-3)", fontSize: "var(--text-xs)" } },
+                  h("span", { style: { width: "160px", color: "var(--color-fg-muted)" } }, item.label),
+                  h("div", { style: { flex: "1", height: "6px", backgroundColor: "var(--color-bg-subtle)", borderRadius: "var(--radius-full)", overflow: "hidden" } },
+                    h("div", { style: { width: `${pVal}%`, height: "100%", backgroundColor: "var(--color-primary)" } })
+                  ),
+                  h("span", { style: { fontFamily: "var(--font-mono)", fontWeight: "var(--font-semibold)", width: "40px", textAlign: "right" } }, `${pVal}th`)
+                );
+              })
+            )
+          ),
+
+          // Maintenance Effort Prediction Card
+          h("div", { className: "card", style: { padding: "var(--space-5)" } },
+            h("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "var(--space-2)" } },
+              h("div", { className: "text-muted", style: { fontSize: "var(--text-xs)", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: "var(--font-semibold)" } }, "Predicted Maintenance Effort"),
+              h("span", { className: "badge badge-neutral", style: { fontSize: "10px" } }, maintEffort.model_version ? `v${maintEffort.model_version}` : "RandomForestRegressor")
+            ),
+            h("div", { style: { fontSize: "var(--text-2xl)", fontWeight: "var(--font-bold)", color: "var(--color-fg-default)", marginTop: "var(--space-1)", marginBottom: "var(--space-1)" } },
+              maintEffort.predicted_total_churn_lines_6m !== undefined
+                ? `~${Math.round(maintEffort.predicted_total_churn_lines_6m).toLocaleString()} lines`
+                : "Awaiting analysis"
+            ),
+            h("div", { style: { fontSize: "var(--text-xs)", color: "var(--color-fg-muted)", marginBottom: "var(--space-3)" } },
+              "Predicted total code churn (lines added + deleted) over the upcoming 6-month development window."
+            ),
+            h("div", { style: { fontSize: "var(--text-xs)", backgroundColor: "var(--color-bg-subtle)", padding: "var(--space-2)", borderRadius: "var(--radius-sm)" } },
+              "Trained on historical commits, cyclomatic complexity distributions, and author ownership metrics."
+            )
+          )
+        );
+        container.appendChild(mlInsightsRow);
+      }
+
       // 3. Component Scores Breakdown
       const componentsCard = h("div", { className: "card", style: { marginBottom: "var(--space-6)" } },
         h("div", { className: "card-header" },

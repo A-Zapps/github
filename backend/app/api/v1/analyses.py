@@ -210,3 +210,65 @@ def get_security_data(analysis_id: int, db: Session = Depends(get_db)):
         },
     }
 
+
+@router.get("/{analysis_id}/bugs")
+def get_bugs_data(analysis_id: int, db: Session = Depends(get_db)):
+    """Fetch F3 Bug Prediction findings (per-file probabilities, risk tiers, and drivers)."""
+    analysis = db.query(Analysis).filter(Analysis.id == analysis_id).first()
+    if not analysis:
+        raise AppError("NOT_FOUND", f"Analysis {analysis_id} not found.", status_code=404)
+
+    result = db.query(Result).filter(
+        Result.analysis_id == analysis_id,
+        Result.module == "bugs",
+    ).first()
+
+    if not result:
+        raise AppError("ANALYSIS_NOT_READY", "Bug prediction data is still processing.", status_code=409)
+
+    payload = result.payload or {}
+    if payload.get("status") == "MODEL_NOT_TRAINED":
+        raise AppError("MODEL_NOT_TRAINED", "Bug risk prediction model has not been trained.", status_code=503)
+
+    return {
+        "data": payload,
+        "meta": {
+            "analysis_id": analysis.id,
+            "head_sha": analysis.head_sha,
+            "analyzer_version": analysis.analyzer_version,
+            "model_versions": result.model_versions or {"bug_risk": "1.0.0"},
+            "generated_at": result.created_at.isoformat() if result.created_at else datetime.now(timezone.utc).isoformat(),
+        },
+    }
+
+
+@router.get("/{analysis_id}/health")
+def get_health_data(analysis_id: int, db: Session = Depends(get_db)):
+    """Fetch F5 Repository Health findings (class probabilities, activity signals, archetype clusters)."""
+    analysis = db.query(Analysis).filter(Analysis.id == analysis_id).first()
+    if not analysis:
+        raise AppError("NOT_FOUND", f"Analysis {analysis_id} not found.", status_code=404)
+
+    result = db.query(Result).filter(
+        Result.analysis_id == analysis_id,
+        Result.module == "health",
+    ).first()
+
+    if not result:
+        raise AppError("ANALYSIS_NOT_READY", "Repository health data is still processing.", status_code=409)
+
+    payload = result.payload or {}
+    if payload.get("status") == "MODEL_NOT_TRAINED":
+        raise AppError("MODEL_NOT_TRAINED", "Repository health prediction model has not been trained.", status_code=503)
+
+    return {
+        "data": payload,
+        "meta": {
+            "analysis_id": analysis.id,
+            "head_sha": analysis.head_sha,
+            "analyzer_version": analysis.analyzer_version,
+            "model_versions": result.model_versions or {"repo_health": "1.0.0"},
+            "generated_at": result.created_at.isoformat() if result.created_at else datetime.now(timezone.utc).isoformat(),
+        },
+    }
+

@@ -59,6 +59,10 @@ export const api = {
   getRepositoryData: (analysisId) => request(`/analyses/${analysisId}/repository`),
   getQualityData: (analysisId) => request(`/analyses/${analysisId}/quality`),
   getSecurityData: (analysisId) => request(`/analyses/${analysisId}/security`),
+  getBugsData: (analysisId) => request(`/analyses/${analysisId}/bugs`),
+  getHealthData: (analysisId) => request(`/analyses/${analysisId}/health`),
+  getModels: () => request("/models"),
+  getModelDetail: (name) => request(`/models/${name}`),
   getRateLimit: () => request("/github/rate-limit"),
   getSettings: () => request("/settings"),
 };

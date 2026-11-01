@@ -73,15 +73,27 @@ export class Router {
       const page = module.default;
       this.currentPage = page;
 
-      if (this.titleElement && page.title) {
+      if (this.titleElement && page && page.title) {
         this.titleElement.textContent = page.title;
         document.title = `${page.title} - GitHub Repository Analyzer`;
       }
 
-      await page.mount({
-        container: this.container,
-        hash: rawHash,
-      });
+      if (typeof page === "function") {
+        const result = page();
+        if (result instanceof Node) {
+          this.container.replaceChildren(result);
+        } else if (result && result.element instanceof Node) {
+          this.container.replaceChildren(result.element);
+          this.currentPage = {
+            unmount: result.destroy || (() => {}),
+          };
+        }
+      } else if (page && typeof page.mount === "function") {
+        await page.mount({
+          container: this.container,
+          hash: rawHash,
+        });
+      }
     } catch (err) {
       console.error("Failed to load page for route:", clean, err);
     }

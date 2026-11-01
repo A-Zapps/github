@@ -27,6 +27,12 @@ from backend.app.core.sandbox import (
 from backend.app.db.models import Analysis, Result, StageRun
 from backend.app.db.session import SessionLocal
 from backend.app.errors import AppError
+from backend.app.ml.features import (
+    compute_file_history_features,
+    compute_repo_history_features,
+    parse_git_log_history,
+)
+from backend.app.ml.registry import get_model_registry
 from backend.app.services.quality_service import calculate_quality_scores
 
 logger = logging.getLogger(__name__)
@@ -408,6 +414,195 @@ async def execute_analysis_pipeline(analysis_id: int, job_id: str, repo_name: st
 
         stage_sec.status = "completed"
         stage_sec.finished_at = datetime.now(timezone.utc)
+        db.commit()
+
+        # Stage 8: History (git log --numstat per file and repo)
+        update_job(db, job_id, status="running", progress=92, stage="history")
+        stage_hist = StageRun(
+            analysis_id=analysis_id,
+            stage="history",
+            status="running",
+            started_at=datetime.now(timezone.utc),
+        )
+        db.add(stage_hist)
+        db.commit()
+
+        cutoff_now = datetime.now(timezone.utc)
+        history_raw = parse_git_log_history(git_dir, cutoff_date=cutoff_now)
+        file_history = compute_file_history_features(history_raw, cutoff_now)
+        repo_history = compute_repo_history_features(history_raw, cutoff_now)
+
+        history_payload = {
+            "total_commits": history_raw.get("total_commits", 0),
+            "past_commits_count": history_raw.get("past_commits_count", 0),
+            "file_history": file_history,
+            "repo_history": repo_history,
+        }
+        save_result("history", history_payload)
+
+        stage_hist.status = "completed"
+        stage_hist.finished_at = datetime.now(timezone.utc)
+        db.commit()
+
+        # Stage 9: Predict (bug_risk, maintenance_effort, repo_health, repo_clusters)
+        update_job(db, job_id, status="running", progress=96, stage="predict")
+        stage_predict = StageRun(
+            analysis_id=analysis_id,
+            stage="predict",
+            status="running",
+            started_at=datetime.now(timezone.utc),
+        )
+        db.add(stage_predict)
+        db.commit()
+
+        registry = get_model_registry()
+
+        # Build feature rows for analyzed files
+        lizard_files = metrics_data.get("files", [])
+        file_feature_rows = []
+        file_paths = []
+
+        for f in lizard_files:
+            rel_path = f.get("filename", "")
+            hist = file_history.get(rel_path, {})
+            loc_val = f.get("nloc", f.get("loc", 0))
+            is_test = 1 if rel_path.lower().startswith("test") or "test" in rel_path.lower() else 0
+
+            row = {
+                "loc": loc_val,
+                "nloc": f.get("nloc", loc_val),
+                "n_functions": len(f.get("functions", [])),
+                "ccn_max": f.get("max_ccn", 1.0),
+                "ccn_mean": f.get("avg_ccn", 1.0),
+                "ccn_p90": f.get("avg_ccn", 1.0) * 1.5,
+                "token_count": f.get("token_count", loc_val * 5),
+                "params_max": 2,
+                "commits_12m": hist.get("commits_12m", 0),
+                "authors_12m": hist.get("authors_12m", 0),
+                "lines_added_12m": hist.get("lines_added_12m", 0),
+                "lines_deleted_12m": hist.get("lines_deleted_12m", 0),
+                "churn_ratio": hist.get("churn_ratio", 0.0),
+                "days_since_last_change": hist.get("days_since_last_change", 365.0),
+                "bugfix_commits_12m": hist.get("bugfix_commits_12m", 0),
+                "age_days_capped": hist.get("age_days_capped", 365.0),
+                "is_test": is_test,
+            }
+            file_feature_rows.append(row)
+            file_paths.append(rel_path)
+
+        # 1. Bug Risk
+        file_bugs_list = []
+        bug_counts = {"high": 0, "medium": 0, "low": 0}
+        if registry.is_model_trained("bug_risk") and file_feature_rows:
+            try:
+                bug_preds = registry.predict_bug_risk(file_feature_rows)
+                for path, feat, pred in zip(file_paths, file_feature_rows, bug_preds):
+                    tier = pred["risk_tier"]
+                    bug_counts[tier] = bug_counts.get(tier, 0) + 1
+
+                    drivers = []
+                    if feat["ccn_max"] >= 10:
+                        drivers.append(f"High CCN ({feat['ccn_max']})")
+                    if feat["churn_ratio"] >= 2.0:
+                        drivers.append(f"High churn ({feat['churn_ratio']})")
+                    if feat["loc"] >= 300:
+                        drivers.append(f"Large file ({feat['loc']} LOC)")
+                    if feat["bugfix_commits_12m"] >= 1:
+                        drivers.append(f"Recent bugfixes ({feat['bugfix_commits_12m']})")
+                    if not drivers:
+                        drivers.append("Low historical stability")
+
+                    file_bugs_list.append({
+                        "file": path,
+                        "risk_tier": tier,
+                        "probability": pred["probability"],
+                        "drivers": drivers[:3],
+                        "ccn_max": feat["ccn_max"],
+                        "loc": feat["loc"],
+                    })
+                bugs_payload = {
+                    "status": "ready",
+                    "model_name": "bug_risk",
+                    "model_version": "1.0.0",
+                    "files": file_bugs_list,
+                    "summary": {
+                        "total_files": len(file_bugs_list),
+                        "high_risk": bug_counts["high"],
+                        "medium_risk": bug_counts["medium"],
+                        "low_risk": bug_counts["low"],
+                    },
+                }
+            except Exception as e:
+                logger.warning("Bug risk prediction failed: %s", e)
+                bugs_payload = {"status": "error", "error": str(e), "files": [], "summary": {}}
+        else:
+            bugs_payload = {"status": "MODEL_NOT_TRAINED", "files": [], "summary": {}}
+        save_result("bugs", bugs_payload)
+
+        # 2. Maintenance Effort
+        if registry.is_model_trained("maintenance_effort") and file_feature_rows:
+            try:
+                maint_preds = registry.predict_maintenance_effort(file_feature_rows)
+                total_churn = sum(p["predicted_churn_lines"] for p in maint_preds)
+                quality_data["maintenance_effort"] = {
+                    "status": "ready",
+                    "model_version": "1.0.0",
+                    "predicted_total_churn_lines_6m": round(total_churn, 1),
+                }
+            except Exception as e:
+                logger.warning("Maintenance effort prediction failed: %s", e)
+                quality_data["maintenance_effort"] = {"status": "error"}
+        else:
+            quality_data["maintenance_effort"] = {"status": "MODEL_NOT_TRAINED"}
+
+        # 3. Repo Health & 4. Repo Clusters
+        repo_health_data = {}
+        if registry.is_model_trained("repo_health"):
+            try:
+                health_input = {
+                    **repo_history,
+                    "total_files": inventory_data.get("total_files", 0),
+                    "total_loc": inventory_data.get("total_loc", 0),
+                    "avg_maintainability": metrics_data.get("summary", {}).get("avg_mi", 75.0),
+                }
+                health_pred = registry.predict_repo_health(health_input)
+                repo_health_data["health"] = health_pred
+                repo_health_data["status"] = "ready"
+            except Exception as e:
+                logger.warning("Repo health prediction failed: %s", e)
+                repo_health_data["health"] = {"status": "error"}
+                repo_health_data["status"] = "error"
+        else:
+            repo_health_data["health"] = {"status": "MODEL_NOT_TRAINED"}
+            repo_health_data["status"] = "MODEL_NOT_TRAINED"
+
+        if registry.is_model_trained("repo_clusters"):
+            try:
+                cluster_input = {
+                    "total_files": inventory_data.get("total_files", 0),
+                    "total_loc": inventory_data.get("total_loc", 0),
+                    "avg_maintainability": metrics_data.get("summary", {}).get("avg_mi", 75.0),
+                    "duplication_pct": duplication_data.get("duplicate_ratio_pct", 0.0),
+                    "test_ratio": (inventory_data.get("test_files", 0) / max(1, inventory_data.get("total_files", 1))),
+                    "commits_per_month_mean": repo_history.get("commits_per_month_mean", 0.0),
+                    "distinct_authors": repo_history.get("distinct_authors", 0),
+                    "bus_factor": repo_history.get("bus_factor", 0),
+                }
+                cluster_pred = registry.predict_repo_clusters(cluster_input)
+                repo_health_data["clusters"] = cluster_pred
+                quality_data["corpus_percentiles"] = cluster_pred.get("corpus_percentiles", {})
+            except Exception as e:
+                logger.warning("Repo clusters prediction failed: %s", e)
+                repo_health_data["clusters"] = {"status": "error"}
+        else:
+            repo_health_data["clusters"] = {"status": "MODEL_NOT_TRAINED"}
+
+        repo_health_data["signals"] = repo_history
+        save_result("health", repo_health_data)
+        save_result("quality", quality_data)
+
+        stage_predict.status = "completed"
+        stage_predict.finished_at = datetime.now(timezone.utc)
         db.commit()
 
         # Update analysis and job status

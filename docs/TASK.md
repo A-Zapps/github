@@ -86,12 +86,12 @@ If a model does not beat its baseline, keep the result and move on. Report it as
 
 ## Phase 4: Predictions in the app (about 3 h)
 
-- [ ] T4.1 Pipeline stages 8 and 9: history features for the repo, then bug_risk, maintenance_effort, repo_health, repo_clusters. Done when: a fresh analysis stores `results[bugs]` and `results[health]` with model versions.
-- [ ] T4.2 Endpoints `/bugs`, `/health`, `/models`, `/models/{name}`. Done when: responses include probability, tier, model name and version, and the not-trained case returns the right code.
-- [ ] T4.3 Bug Prediction page. Done when: file table sorts and filters, drivers show for each file, and the scatter chart matches the table.
-- [ ] T4.4 Repository Health page. Done when: class probabilities sum to 100% and the signals table shows the real inputs.
-- [ ] T4.5 Model Performance page: all models, baselines next to metrics, confusion matrices, curves, feature importance, model card link, not-trained cards. Done when: every number traces to a `metrics.json` file.
-- [ ] T4.6 Add percentile vs corpus and maintenance effort to the Code Quality page. Done when: the percentile comes from `corpus_reference` and is labeled.
+- [x] T4.1 Pipeline stages 8 and 9: history features for the repo, then bug_risk, maintenance_effort, repo_health, repo_clusters. Done when: a fresh analysis stores `results[bugs]` and `results[health]` with model versions.
+- [x] T4.2 Endpoints `/bugs`, `/health`, `/models`, `/models/{name}`. Done when: responses include probability, tier, model name and version, and the not-trained case returns the right code.
+- [x] T4.3 Bug Prediction page. Done when: file table sorts and filters, drivers show for each file, and the scatter chart matches the table.
+- [x] T4.4 Repository Health page. Done when: class probabilities sum to 100% and the signals table shows the real inputs.
+- [x] T4.5 Model Performance page: all models, baselines next to metrics, confusion matrices, curves, feature importance, model card link, not-trained cards. Done when: every number traces to a `metrics.json` file.
+- [x] T4.6 Add percentile vs corpus and maintenance effort to the Code Quality page. Done when: the percentile comes from `corpus_reference` and is labeled.
 
 You will see: predictions on a real repo, and an honest Model Performance page.
 
