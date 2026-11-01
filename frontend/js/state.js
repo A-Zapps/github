@@ -26,6 +26,13 @@ class AppState {
     this.currentAnalysisId = val;
   }
 
+  get(key) {
+    if (key === "analysisId" || key === "activeAnalysisId") return this.currentAnalysisId;
+    if (key === "repo" || key === "activeRepo") return this.currentRepo;
+    if (key === "headSha" || key === "activeHeadSha") return this.currentHeadSha;
+    return this[key] ?? null;
+  }
+
   get activeRepo() {
     return this.currentRepo;
   }

@@ -47,3 +47,15 @@ Thumbs.db
 
 ~
 
+
+data/
+.venv/
+.venv_backup_windows/
+.env
+.pytest_cache/
+.ruff_cache/
+__pycache__/
+*.zip
+.DS_Store
+._*
+__MACOSX/

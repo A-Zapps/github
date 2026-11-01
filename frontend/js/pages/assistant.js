@@ -31,7 +31,8 @@ let currentMode = "ask";
 export default {
   title: "AI Assistant",
 
-  async mount(container) {
+  async mount(ctx) {
+    const container = ctx.container || ctx;
     container.innerHTML = "";
     selectedChunk = null;
 

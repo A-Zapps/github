@@ -13,10 +13,11 @@ import { h } from "../ui/h.js";
 import { renderSkeleton } from "../ui/skeleton.js";
 import { showToast } from "../ui/toast.js";
 
-export default {
+const reportsPage = {
   title: "Executive Reports",
 
-  async mount(container) {
+  async mount(ctx) {
+    const container = ctx.container || ctx;
     container.innerHTML = "";
     const analysisId = state.get("analysisId");
 
@@ -57,7 +58,7 @@ export default {
           "div",
           { class: "p-8 text-center" },
           h("p", { class: "text-red-400 mb-4" }, `Failed to load reports: ${err.message}`),
-          h("button", { class: "btn btn-outline", onclick: () => this.mount(container) }, "Retry")
+          h("button", { class: "btn btn-outline", onclick: () => reportsPage.mount({ container }) }, "Retry")
         )
       );
     }
@@ -196,3 +197,5 @@ function renderMetricTile(label, value, caption) {
     h("span", { class: "text-[10px] text-neutral-500" }, caption)
   );
 }
+
+export default reportsPage;
