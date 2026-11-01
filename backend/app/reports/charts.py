@@ -1,7 +1,14 @@
 """Matplotlib chart renderer for PDF reports matching DESIGN.md tokens (T8.1)."""
 
 import io
+import os
+import tempfile
 from typing import Any, Dict
+
+if "MPLCONFIGDIR" not in os.environ:
+    _mpl_dir = os.path.join(tempfile.gettempdir(), "matplotlib_cache")
+    os.makedirs(_mpl_dir, exist_ok=True)
+    os.environ["MPLCONFIGDIR"] = _mpl_dir
 
 import matplotlib
 

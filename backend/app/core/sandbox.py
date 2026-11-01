@@ -1,8 +1,10 @@
 """Sandboxed repository shallow cloning and safe tree materialization (RULES B1, B5 & ARCHITECTURE 7)."""
 
+import io
 import os
 import re
 import shutil
+import tarfile
 from typing import Any, Dict, List, Optional, Set
 
 from backend.app.config import get_settings
@@ -88,9 +90,12 @@ def clone_bare_repo(repo_name: str, target_git_dir: str, months: int = 12, token
 
     repo_url = f"https://github.com/{repo_name}.git"
 
+    # Shallow clone with depth 50: downloads single packfile containing all objects for the latest commits.
+    # Note: blobless clone (--filter=blob:none) is explicitly avoided because it triggers on-demand network fetches
+    # for individual blobs during tree inspection, causing timeouts and multi-minute stalls.
     argv = [
         "git", "clone", "--bare", "--single-branch", "--no-tags",
-        "--filter=blob:none", "--depth=100", "--no-recurse-submodules",
+        "--depth=50", "--no-recurse-submodules",
         repo_url, target_git_dir,
     ]
 
@@ -106,15 +111,7 @@ def clone_bare_repo(repo_name: str, target_git_dir: str, months: int = 12, token
     parent_dir = os.path.dirname(target_git_dir)
     os.makedirs(parent_dir, exist_ok=True)
 
-    result = run_tool(argv, timeout=180.0, cwd=parent_dir, env=extra_env)
-    if result.returncode != 0:
-        # Fallback to standard clone without blob filter
-        argv_fallback = [
-            "git", "clone", "--bare", "--single-branch", "--no-tags",
-            "--depth=100", "--no-recurse-submodules",
-            repo_url, target_git_dir,
-        ]
-        result = run_tool(argv_fallback, timeout=180.0, cwd=parent_dir, env=extra_env)
+    result = run_tool(argv, timeout=120.0, cwd=parent_dir, env=extra_env)
     if result.returncode != 0:
         err = result.stderr.decode("utf-8", errors="replace")
         raise AppError("STAGE_FAILED", f"Git clone failed: {err}", status_code=500)
@@ -130,24 +127,97 @@ def materialize_tree(
     """Parse git tree, filter unsafe entries, and extract safe source files (ARCHITECTURE 7)."""
     os.makedirs(target_src_dir, exist_ok=True)
 
-    # 1. List tree entries with sizes and modes
+    # 1. Fast Path: Use git archive to export the complete tree in a single command (< 0.2s)
+    archive_result = run_tool(["git", "archive", head_sha], timeout=30.0, cwd=git_dir)
+    if archive_result.returncode != 0:
+        archive_result = run_tool(["git", "archive", "HEAD"], timeout=30.0, cwd=git_dir)
+
+    if archive_result.returncode == 0 and archive_result.stdout:
+        try:
+            tar = tarfile.open(fileobj=io.BytesIO(archive_result.stdout))
+            materialized_count = 0
+            truncated = False
+            seen_paths_lower: Set[str] = set()
+            materialized_paths: List[str] = []
+
+            for member in tar.getmembers():
+                if not member.isfile():
+                    continue
+
+                path_str = member.name.replace("\\", "/")
+                # Check path safety against path traversal and Windows reserved names
+                if not is_safe_relative_path(path_str, target_src_dir):
+                    continue
+
+                # Check for ignored directories
+                path_segments = set(re.split(r"[/\\]+", path_str))
+                if path_segments.intersection(IGNORED_DIRS):
+                    continue
+
+                # Check file extension / minification
+                base_name = os.path.basename(path_str).lower()
+                if base_name.endswith((".min.js", ".min.css", ".map", ".lockb")):
+                    continue
+
+                # Check file size limit unless it's a known dependency manifest
+                if base_name not in MANIFEST_FILENAMES and member.size > (max_file_kb * 1024):
+                    continue
+
+                # Case-insensitive collision detection
+                lower_path = path_str.lower()
+                if lower_path in seen_paths_lower:
+                    continue
+                seen_paths_lower.add(lower_path)
+
+                # File count cap
+                if materialized_count >= max_files:
+                    truncated = True
+                    break
+
+                # Read content from tar
+                extracted = tar.extractfile(member)
+                if not extracted:
+                    continue
+                content_bytes = extracted.read()
+
+                # Binary check: skip if NUL byte in first 8 KB (unless manifest)
+                if base_name not in MANIFEST_FILENAMES and b"\0" in content_bytes[:8192]:
+                    continue
+
+                # Write to safe path on disk
+                dest_path = os.path.join(target_src_dir, path_str)
+                os.makedirs(os.path.dirname(dest_path), exist_ok=True)
+                with open(dest_path, "wb") as f:
+                    f.write(content_bytes)
+
+                materialized_count += 1
+                materialized_paths.append(path_str)
+
+            return {
+                "materialized_count": materialized_count,
+                "truncated": truncated,
+                "paths": materialized_paths,
+            }
+        except Exception:
+            pass  # Fall through to ls-tree fallback
+
+    # 2. Fallback Path: git ls-tree without -l (avoids on-demand blob fetches)
     ls_result = run_tool(
-        ["git", "ls-tree", "-r", "-z", "-l", head_sha],
-        timeout=60.0,
+        ["git", "ls-tree", "-r", "-z", head_sha],
+        timeout=30.0,
         cwd=git_dir,
     )
     if ls_result.returncode != 0:
-        # Fallback to HEAD if head_sha is not present in shallow clone
         ls_result = run_tool(
-            ["git", "ls-tree", "-r", "-z", "-l", "HEAD"],
-            timeout=60.0,
+            ["git", "ls-tree", "-r", "-z", "HEAD"],
+            timeout=30.0,
             cwd=git_dir,
         )
     if ls_result.returncode != 0:
         err = ls_result.stderr.decode("utf-8", errors="replace").strip()
         raise AppError("STAGE_FAILED", f"Failed to list git repository tree: {err or 'unknown error'}", status_code=500)
 
-    # Output format per entry: "<mode> <type> <object> <size>\t<path>\0"
+    # Output format per entry: "<mode> <type> <object>\t<path>\0"
     raw_entries = ls_result.stdout.split(b"\0")
     materialized_count = 0
     truncated = False
@@ -159,13 +229,11 @@ def materialize_tree(
             continue
         try:
             meta, path_bytes = entry.split(b"\t", 1)
-            path_str = path_bytes.decode("utf-8", errors="replace")
+            path_str = path_bytes.decode("utf-8", errors="replace").replace("\\", "/")
             meta_parts = meta.decode("ascii", errors="replace").split()
             mode = meta_parts[0]
             obj_type = meta_parts[1]
             obj_sha = meta_parts[2]
-            size_str = meta_parts[3] if len(meta_parts) > 3 else "0"
-            size_bytes = int(size_str) if size_str.isdigit() else 0
         except Exception:
             continue
 
@@ -187,10 +255,6 @@ def materialize_tree(
         if base_name.endswith((".min.js", ".min.css", ".map", ".lockb")):
             continue
 
-        # Check file size limit unless it's a known dependency manifest
-        if base_name not in MANIFEST_FILENAMES and size_bytes > (max_file_kb * 1024):
-            continue
-
         # Case-insensitive collision detection
         lower_path = path_str.lower()
         if lower_path in seen_paths_lower:
@@ -208,6 +272,10 @@ def materialize_tree(
             continue
 
         content_bytes = cat_result.stdout
+
+        # Check file size limit unless it's a known dependency manifest
+        if base_name not in MANIFEST_FILENAMES and len(content_bytes) > (max_file_kb * 1024):
+            continue
 
         # Binary check: skip if NUL byte in first 8 KB (unless manifest)
         if base_name not in MANIFEST_FILENAMES and b"\0" in content_bytes[:8192]:
